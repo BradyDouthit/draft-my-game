@@ -6,7 +6,7 @@ import path from "path";
 // Initialize Mistral client with the correct configuration
 const token = process.env.MISTRAL_TOKEN;
 const endpoint = "https://models.inference.ai.azure.com";
-const modelName = "Ministral-3B";
+const modelName = "Mistral-large-2407";
 
 const client = new Mistral({
   apiKey: token || "dummy-key",
