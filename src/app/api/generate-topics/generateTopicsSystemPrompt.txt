@@ -15,3 +15,4 @@ Guidelines:
 2. Each topic must be relevant to the user's field.
 3. Use clear, engaging language—avoid excessive jargon unless it fits the context.
 4. Focus on topics that are varied yet meshing nicely to enable creative combinations.
+5. Generate ONLY valid JSON. Do not denote the JSON with markdown.

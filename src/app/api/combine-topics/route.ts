@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { Mistral } from "@mistralai/mistralai";
+import { promises as fs } from "fs";
+import path from "path";
 
 // Initialize Mistral client with the correct configuration
 const token = process.env.MISTRAL_TOKEN;
@@ -11,43 +13,88 @@ const client = new Mistral({
   serverURL: endpoint,
 });
 
-const systemPrompt = `You are a creative idea generator that combines topics in unexpected and meaningful ways.
-Your goal is to create interesting combinations that spark new ideas and insights.
-
-When given two topics, generate a creative combination that captures elements of both.
-Your response must be in this exact JSON format:
-{
-  "combinedTopic": "1-3 words that blend both topics",
-  "explanation": "brief explanation of how they connect"
+interface CombinedTopicResponse {
+  combinedTopic: string;
 }
 
-Guidelines for combinations:
-1. Keep the combined topic concise (1-3 words)
-2. Make connections that are surprising yet meaningful
-3. Focus on actionable or concrete concepts
-4. Ensure the combination maintains elements from both original topics
-5. Keep the explanation brief but insightful`;
+function validateCombinedResponse(data: any): data is CombinedTopicResponse {
+  if (!data || typeof data !== 'object') {
+    console.error("Response is not an object:", data);
+    return false;
+  }
+  if (typeof data.combinedTopic !== 'string') {
+    console.error("combinedTopic is not a string:", data);
+    return false;
+  }
+  if (data.combinedTopic.length === 0) {
+    console.error("combinedTopic is empty");
+    return false;
+  }
+  return true;
+}
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { topic1, topic2 } = body;
-
-    if (!topic1 || !topic2) {
+    // Validate request
+    if (!request.body) {
       return NextResponse.json(
-        { error: "Both topics are required" },
+        { error: "Invalid request" },
         { status: 400 }
       );
     }
 
-    // For development/template purposes, return mock response if no API key
-    if (!token) {
-      return NextResponse.json({
-        combinedTopic: `Combined: ${topic1} + ${topic2}`,
-        explanation: "This is a mock response as no API key is configured.",
-      });
+    const body = await request.json();
+    const { topic1, topic2 } = body;
+
+    // Input validation
+    if (!topic1 || typeof topic1 !== 'string' || !topic2 || typeof topic2 !== 'string') {
+      return NextResponse.json(
+        { error: "Please provide two topics" },
+        { status: 400 }
+      );
     }
 
+    if (topic1.length > 100 || topic2.length > 100) {
+      return NextResponse.json(
+        { error: "Topics are too long" },
+        { status: 400 }
+      );
+    }
+
+    // API key validation
+    if (!token) {
+      console.error("Missing API configuration");
+      return NextResponse.json(
+        { error: "Service temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    // Read and validate system prompt
+    let systemPrompt: string;
+    try {
+      const systemPromptPath = path.join(
+        process.cwd(),
+        "src",
+        "app",
+        "api",
+        "combine-topics",
+        "systemPrompt.txt"
+      );
+      systemPrompt = await fs.readFile(systemPromptPath, "utf-8");
+      
+      if (!systemPrompt || systemPrompt.length === 0) {
+        throw new Error("System prompt is empty");
+      }
+    } catch (error) {
+      console.error("Error reading system prompt:", error);
+      return NextResponse.json(
+        { error: "Service configuration error" },
+        { status: 503 }
+      );
+    }
+
+    // Make API call
     const response = await client.chat.complete({
       model: modelName,
       messages: [
@@ -57,7 +104,7 @@ export async function POST(request: Request) {
         },
         {
           role: "user",
-          content: `Combine these topics in a creative and meaningful way:\nTopic 1: ${topic1}\nTopic 2: ${topic2}`,
+          content: `<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`,
         },
       ],
       temperature: 1.0,
@@ -65,25 +112,39 @@ export async function POST(request: Request) {
 
     const content = response.choices?.[0]?.message?.content;
     if (!content || Array.isArray(content)) {
-      throw new Error("Invalid response content from API");
+      console.error("Invalid AI service response");
+      return NextResponse.json(
+        { error: "Unable to generate combination" },
+        { status: 500 }
+      );
     }
 
-    let parsedResult;
+    let parsedResult: unknown;
     try {
       parsedResult = JSON.parse(content);
+      console.log("Parsed response:", parsedResult);
     } catch (e) {
-      // Fallback if the response isn't valid JSON
-      parsedResult = {
-        combinedTopic: content,
-        explanation: "Generated topic combination",
-      };
+      console.error("Failed to parse response:", content);
+      return NextResponse.json(
+        { error: "Unable to process response" },
+        { status: 500 }
+      );
+    }
+
+    // Validate the response structure
+    if (!validateCombinedResponse(parsedResult)) {
+      console.error("Invalid response structure");
+      return NextResponse.json(
+        { error: "Unable to generate valid combination" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(parsedResult);
   } catch (error) {
-    console.error("Error combining topics:", error);
+    console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "Failed to combine topics" },
+      { error: "Something went wrong" },
       { status: 500 }
     );
   }
