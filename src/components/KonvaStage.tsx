@@ -6,6 +6,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 interface KonvaStageProps {
   width: number;
   height: number;
+  useCase: string;
 }
 
 interface TopicState {
@@ -15,7 +16,7 @@ interface TopicState {
   text: string;
 }
 
-export default function KonvaStage({ width, height }: KonvaStageProps) {
+export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([
     { id: '1', x: width / 3, y: height / 2, text: 'Rock Climbing' },
     { id: '2', x: (width * 2) / 3, y: height / 2, text: 'Web Development' },
@@ -46,6 +47,7 @@ export default function KonvaStage({ width, height }: KonvaStageProps) {
           body: JSON.stringify({
             topic1: draggedTopic.text,
             topic2: otherTopic.text,
+            useCase: useCase || 'hobbyist', // Default to hobbyist if no useCase provided
           }),
         });
 

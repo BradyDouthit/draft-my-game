@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     // Parse the request body
     const body = await request.json();
-    const { topic1, topic2 } = body;
+    const { topic1, topic2, useCase = 'hobbyist' } = body;
 
     // Validate input
     if (!topic1 || !topic2) {
@@ -38,12 +38,12 @@ export async function POST(request: Request) {
     );
     const systemPrompt = await fs.readFile(systemPromptPath, "utf-8");
 
-    // Prepare the prompt
-    const prompt = `<topics>
+    // Prepare the prompt with useCase
+    const prompt = `<usecase>${useCase}</usecase>
+<topics>
     <topic1>${topic1}</topic1>
-    <topic2>Topic 2: ${topic2}</topic2>
-    </topics>
-    `;
+    <topic2>${topic2}</topic2>
+</topics>`;
 
     // Call Mistral API with the correct configuration
     const response = await client.chat.complete({
