@@ -58,7 +58,7 @@ export default function Home() {
           <input
             type="text"
             className="w-96 px-4 py-2 text-lg bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg"
-            placeholder="Enter your role (e.g., entrepreneur, author, student)..."
+            placeholder={'What are you trying to do? Example: "Writing a book about zombies'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />
