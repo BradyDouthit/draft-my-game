@@ -9,8 +9,8 @@ const KonvaStage = dynamic(() => import('../components/KonvaStage'), {
 
 export default function Home() {
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [useCase, setUseCase] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [debouncedUseCase, setDebouncedUseCase] = useState('');
   const [showTooltip, setShowTooltip] = useState(true);
 
   // Check if tooltip has been dismissed before
@@ -18,6 +18,15 @@ export default function Home() {
     const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
     setShowTooltip(!hasBeenDismissed);
   }, []);
+
+  // Debounce the input value
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUseCase(inputValue);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [inputValue]);
 
   // Update stage size on mount and window resize
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       {/* Canvas */}
-      <KonvaStage width={stageSize.width} height={stageSize.height} useCase={useCase} />
+      <KonvaStage width={stageSize.width} height={stageSize.height} useCase={debouncedUseCase} />
 
       {/* Command Palette */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
@@ -50,8 +59,8 @@ export default function Home() {
             type="text"
             className="w-96 px-4 py-2 text-lg bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg"
             placeholder="Enter your role (e.g., entrepreneur, author, student)..."
-            value={useCase}
-            onChange={(e) => setUseCase(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
           />
           
           {/* Tooltip */}

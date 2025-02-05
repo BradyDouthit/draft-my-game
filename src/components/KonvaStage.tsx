@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Topic from './Topic';
 import { KonvaEventObject } from 'konva/lib/Node';
@@ -17,13 +17,51 @@ interface TopicState {
 }
 
 export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
-  const [topics, setTopics] = useState<TopicState[]>([
-    { id: '1', x: width / 3, y: height / 2, text: 'Rock Climbing' },
-    { id: '2', x: (width * 2) / 3, y: height / 2, text: 'Web Development' },
-  ]);
+  const [topics, setTopics] = useState<TopicState[]>([]);
+
+  // Generate initial topics when useCase changes
+  useEffect(() => {
+    const generateTopics = async () => {
+      if (!useCase) return;
+
+      try {
+        const response = await fetch('/api/generate-topics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ useCase }),
+        });
+
+        const result = await response.json();
+        
+        if (result.topics) {
+          // Arrange topics in a circle
+          const radius = Math.min(width, height) * 0.3; // 30% of the smaller dimension
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          const arrangedTopics = result.topics.map((topic: string, i: number) => {
+            const angle = (i / result.topics.length) * 2 * Math.PI;
+            return {
+              id: Date.now().toString() + i,
+              x: centerX + radius * Math.cos(angle),
+              y: centerY + radius * Math.sin(angle),
+              text: topic,
+            };
+          });
+
+          setTopics(arrangedTopics);
+        }
+      } catch (error) {
+        console.error('Error generating initial topics:', error);
+      }
+    };
+
+    generateTopics();
+  }, [useCase, width, height]);
 
   const handleDragEnd = async (topicId: string, e: KonvaEventObject<DragEvent>) => {
-    // Update the position of the dragged topic
     const draggedTopic = topics.find(t => t.id === topicId);
     if (!draggedTopic) return;
 
@@ -33,11 +71,10 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     // Check for collision with other topics
     const otherTopic = topics.find(t => 
       t.id !== topicId && 
-      Math.hypot(t.x - newX, t.y - newY) < 100 // Check if topics are within 100px
+      Math.hypot(t.x - newX, t.y - newY) < 100
     );
 
     if (otherTopic) {
-      // Combine topics
       try {
         const response = await fetch('/api/combine-topics', {
           method: 'POST',
@@ -47,19 +84,17 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
           body: JSON.stringify({
             topic1: draggedTopic.text,
             topic2: otherTopic.text,
-            useCase: useCase || 'hobbyist', // Default to hobbyist if no useCase provided
           }),
         });
 
         const result = await response.json();
         
         if (result.combinedTopic) {
-          // Replace the two topics with the new combined topic
           setTopics(prev => [
             ...prev.filter(t => t.id !== topicId && t.id !== otherTopic.id),
             {
               id: Date.now().toString(),
-              x: (newX + otherTopic.x) / 2, // Place new topic between the two combined topics
+              x: (newX + otherTopic.x) / 2,
               y: (newY + otherTopic.y) / 2,
               text: result.combinedTopic,
             },
