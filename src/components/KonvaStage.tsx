@@ -17,8 +17,8 @@ interface TopicState {
 
 export default function KonvaStage({ width, height }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([
-    { id: '1', x: width / 3, y: height / 2, text: 'Space Travel' },
-    { id: '2', x: (width * 2) / 3, y: height / 2, text: 'Coffee Making' },
+    { id: '1', x: width / 3, y: height / 2, text: 'Rock Climbing' },
+    { id: '2', x: (width * 2) / 3, y: height / 2, text: 'Web Development' },
   ]);
 
   const handleDragEnd = async (topicId: string, e: KonvaEventObject<DragEvent>) => {
