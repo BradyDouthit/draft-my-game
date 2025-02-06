@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Topic from './Topic';
+import Grid from './Grid';
 import { KonvaEventObject } from 'konva/lib/Node';
 
 interface KonvaStageProps {
@@ -16,8 +17,57 @@ interface TopicState {
   text: string;
 }
 
+interface StagePosition {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([]);
+  const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
+  const [isDraggingTopic, setIsDraggingTopic] = useState(false);
+  const [cursor, setCursor] = useState<string>('default');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Check system theme preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  // Handle wheel events for zooming
+  const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    const scaleBy = 1.1;
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const oldScale = stagePos.scale;
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const mousePointTo = {
+      x: (pointer.x - stagePos.x) / oldScale,
+      y: (pointer.y - stagePos.y) / oldScale,
+    };
+
+    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+    // Limit zoom scale
+    if (newScale < 0.1 || newScale > 5) return;
+
+    setStagePos({
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+      scale: newScale,
+    });
+  }, [stagePos]);
 
   // Generate initial topics when useCase changes
   useEffect(() => {
@@ -52,6 +102,8 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
           });
 
           setTopics(arrangedTopics);
+          // Reset stage position when new topics are generated
+          setStagePos({ x: 0, y: 0, scale: 1 });
         }
       } catch (error) {
         console.error('Error generating initial topics:', error);
@@ -61,7 +113,14 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     generateTopics();
   }, [useCase, width, height]);
 
+  const handleDragStart = (topicId: string) => {
+    setIsDraggingTopic(true);
+    setCursor('grabbing');
+  };
+
   const handleDragEnd = async (topicId: string, e: KonvaEventObject<DragEvent>) => {
+    setIsDraggingTopic(false);
+    setCursor('grab');
     const draggedTopic = topics.find(t => t.id === topicId);
     if (!draggedTopic) return;
 
@@ -114,19 +173,63 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     );
   };
 
+  const handleStageDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    if (!isDraggingTopic) {
+      setStagePos({
+        ...stagePos,
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (!isDraggingTopic) {
+      setCursor('grab');
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setCursor('default');
+  };
+
   return (
-    <Stage width={width} height={height}>
-      <Layer>
-        {topics.map((topic) => (
-          <Topic
-            key={topic.id}
-            x={topic.x}
-            y={topic.y}
-            text={topic.text}
-            onDragEnd={(e) => handleDragEnd(topic.id, e)}
+    <div style={{ cursor, background: isDarkMode ? '#1a1a1a' : '#ffffff' }}>
+      <Stage 
+        width={width} 
+        height={height}
+        draggable={!isDraggingTopic}
+        onDragEnd={handleStageDragEnd}
+        onWheel={handleWheel}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        x={stagePos.x}
+        y={stagePos.y}
+        scaleX={stagePos.scale}
+        scaleY={stagePos.scale}
+      >
+        <Layer>
+          <Grid 
+            width={width}
+            height={height}
+            scale={stagePos.scale}
+            offsetX={stagePos.x}
+            offsetY={stagePos.y}
+            isDarkMode={isDarkMode}
           />
-        ))}
-      </Layer>
-    </Stage>
+          {topics.map((topic) => (
+            <Topic
+              key={topic.id}
+              x={topic.x}
+              y={topic.y}
+              text={topic.text}
+              isDarkMode={isDarkMode}
+              onDragStart={() => handleDragStart(topic.id)}
+              onDragEnd={(e) => handleDragEnd(topic.id, e)}
+            />
+          ))}
+        </Layer>
+      </Stage>
+    </div>
   );
 } 
