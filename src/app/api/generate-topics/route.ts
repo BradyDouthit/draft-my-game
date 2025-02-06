@@ -18,10 +18,12 @@ interface TopicsResponse {
 }
 
 function validateTopicsResponse(data: any): data is TopicsResponse {
-  if (!data || typeof data !== 'object') return false;
+  if (!data || typeof data !== "object") return false;
   if (!Array.isArray(data.topics)) return false;
   if (data.topics.length !== 10) return false;
-  return data.topics.every((topic: any) => typeof topic === 'string' && topic.length > 0);
+  return data.topics.every(
+    (topic: any) => typeof topic === "string" && topic.length > 0
+  );
 }
 
 export async function POST(request: Request) {
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { useCase } = body;
 
-    if (!useCase || typeof useCase !== 'string') {
+    if (!useCase || typeof useCase !== "string") {
       return NextResponse.json(
         { error: "Use case must be a non-empty string" },
         { status: 400 }
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
         "generateTopicsSystemPrompt.txt"
       );
       systemPrompt = await fs.readFile(systemPromptPath, "utf-8");
-      
+
       if (!systemPrompt || systemPrompt.length === 0) {
         throw new Error("System prompt is empty");
       }
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
       temperature: 1.0,
     });
 
-    const content = response.choices?.[0]?.message?.content;
+    let content = response.choices?.[0]?.message?.content;
     if (!content || Array.isArray(content)) {
       return NextResponse.json(
         { error: "Invalid response from AI service" },
@@ -109,6 +111,9 @@ export async function POST(request: Request) {
 
     let parsedResult: unknown;
     try {
+      if (content.includes("```json")) {
+        content = content.replaceAll("```json", "").replaceAll("```", "");
+      }
       parsedResult = JSON.parse(content);
     } catch (e) {
       console.error("Failed to parse AI response:", content);

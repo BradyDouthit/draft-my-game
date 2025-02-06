@@ -55,10 +55,11 @@ export default function Home() {
       {/* Command Palette */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
         <div className="relative">
-          <input
-            type="text"
+          <textarea
+            rows={4}
+            cols={50}
             className="w-96 px-4 py-2 text-lg bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg"
-            placeholder={'What are you trying to do? Example: "Writing a book about zombies'}
+            placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />

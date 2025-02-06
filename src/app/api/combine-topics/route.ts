@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       temperature: 1.0,
     });
 
-    const content = response.choices?.[0]?.message?.content;
+    let  content = response.choices?.[0]?.message?.content;
     if (!content || Array.isArray(content)) {
       console.error("Invalid AI service response");
       return NextResponse.json(
@@ -121,6 +121,10 @@ export async function POST(request: Request) {
 
     let parsedResult: unknown;
     try {
+      if (content.includes("```json")) {
+        content = content.replaceAll("```json", "").replaceAll("```", "");
+      }
+      
       parsedResult = JSON.parse(content);
       console.log("Parsed response:", parsedResult);
     } catch (e) {
