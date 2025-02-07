@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Stage, Layer, Rect, Group } from 'react-konva';
+import { Stage, Layer, Rect, Group, Line } from 'react-konva';
 import Topic from './Topic';
+import Expansion from './Expansion';
 import { KonvaEventObject } from 'konva/lib/Node';
 
 // Add throttle function
@@ -35,6 +36,14 @@ interface StagePosition {
   x: number;
   y: number;
   scale: number;
+}
+
+interface ExpansionNode {
+  id: string;
+  parentId: string;
+  x: number;
+  y: number;
+  text: string;
 }
 
 function LoadingTopics({ width, height }: { width: number; height: number }) {
@@ -73,6 +82,7 @@ function LoadingTopics({ width, height }: { width: number; height: number }) {
 
 export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([]);
+  const [expansions, setExpansions] = useState<ExpansionNode[]>([]);
   const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
   const [isDraggingTopic, setIsDraggingTopic] = useState(false);
   const [cursor, setCursor] = useState<string>('default');
@@ -174,6 +184,18 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     setCursor('grabbing');
   }, []);
 
+  const handleDragMove = useCallback((topicId: string, e: KonvaEventObject<DragEvent>) => {
+    const newX = e.target.x();
+    const newY = e.target.y();
+
+    // Update topic position in real-time
+    setTopics(prev =>
+      prev.map(t =>
+        t.id === topicId ? { ...t, x: newX, y: newY } : t
+      )
+    );
+  }, []);
+
   const handleDragEnd = useCallback(async (topicId: string, e: KonvaEventObject<DragEvent>) => {
     setIsDraggingTopic(false);
     setCursor('grab');
@@ -249,6 +271,79 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     setCursor('default');
   }, []);
 
+  const handleTopicClick = useCallback((topicId: string, topicX: number, topicY: number) => {
+    // Check if topic already has expansions
+    const existingExpansions = expansions.filter(e => e.parentId === topicId);
+    
+    if (existingExpansions.length === 0) {
+      // Create 3 expansion nodes in a semi-circle above the topic
+      const radius = 150;
+      const newExpansions: ExpansionNode[] = [
+        {
+          id: Date.now().toString() + '-1',
+          parentId: topicId,
+          x: topicX + radius * Math.cos(Math.PI / 6),
+          y: topicY - radius * Math.sin(Math.PI / 6),
+          text: 'Expansion 1'
+        },
+        {
+          id: Date.now().toString() + '-2',
+          parentId: topicId,
+          x: topicX,
+          y: topicY - radius,
+          text: 'Expansion 2'
+        },
+        {
+          id: Date.now().toString() + '-3',
+          parentId: topicId,
+          x: topicX - radius * Math.cos(Math.PI / 6),
+          y: topicY - radius * Math.sin(Math.PI / 6),
+          text: 'Expansion 3'
+        }
+      ];
+      
+      console.log('Creating new expansions:', newExpansions);
+      setExpansions(prev => [...prev, ...newExpansions]);
+    } else {
+      // Remove existing expansions for this topic
+      console.log('Removing expansions for topic:', topicId);
+      setExpansions(prev => prev.filter(e => e.parentId !== topicId));
+    }
+  }, [expansions]);
+
+  const handleExpansionDragStart = () => {
+    setIsDraggingTopic(true);
+    setCursor('grabbing');
+  };
+
+  const handleExpansionDragEnd = (id: string, e: KonvaEventObject<DragEvent>) => {
+    setIsDraggingTopic(false);
+    setCursor('grab');
+
+    const newX = e.target.x();
+    const newY = e.target.y();
+
+    setExpansions(prev =>
+      prev.map(exp =>
+        exp.id === id
+          ? { ...exp, x: newX, y: newY }
+          : exp
+      )
+    );
+  };
+
+  const handleExpansionDragMove = useCallback((id: string, e: KonvaEventObject<DragEvent>) => {
+    const newX = e.target.x();
+    const newY = e.target.y();
+
+    // Update expansion position in real-time
+    setExpansions(prev =>
+      prev.map(exp =>
+        exp.id === id ? { ...exp, x: newX, y: newY } : exp
+      )
+    );
+  }, []);
+
   return (
     <div style={{ cursor, background: '#1a1a1a' }}>
       <Stage 
@@ -266,20 +361,54 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         perfectDrawEnabled={false}
       >
         <Layer>
-          {isLoading ? (
-            <LoadingTopics width={width} height={height} />
-          ) : (
-            topics.map((topic) => (
-              <Topic
-                key={topic.id}
-                x={topic.x}
-                y={topic.y}
-                text={topic.text}
-                onDragStart={() => handleDragStart(topic.id)}
-                onDragEnd={(e) => handleDragEnd(topic.id, e)}
+          {/* Connection lines */}
+          {expansions.map((expansion) => {
+            const parentTopic = topics.find(t => t.id === expansion.parentId);
+            if (!parentTopic) return null;
+            
+            return (
+              <Line
+                key={`line-${expansion.id}`}
+                points={[
+                  parentTopic.x,
+                  parentTopic.y,
+                  expansion.x,
+                  expansion.y
+                ]}
+                stroke="#3a3a3a"
+                strokeWidth={2}
+                opacity={0.5}
+                perfectDrawEnabled={false}
               />
-            ))
-          )}
+            );
+          })}
+
+          {/* Topics */}
+          {topics.map((topic) => (
+            <Topic
+              key={topic.id}
+              x={topic.x}
+              y={topic.y}
+              text={topic.text}
+              onDragStart={() => handleDragStart(topic.id)}
+              onDragMove={(e) => handleDragMove(topic.id, e)}
+              onDragEnd={(e) => handleDragEnd(topic.id, e)}
+              onClick={() => handleTopicClick(topic.id, topic.x, topic.y)}
+            />
+          ))}
+
+          {/* Expansions */}
+          {expansions.map((expansion) => (
+            <Expansion
+              key={expansion.id}
+              x={expansion.x}
+              y={expansion.y}
+              text={expansion.text}
+              onDragStart={() => handleExpansionDragStart()}
+              onDragMove={(e) => handleExpansionDragMove(expansion.id, e)}
+              onDragEnd={(e) => handleExpansionDragEnd(expansion.id, e)}
+            />
+          ))}
         </Layer>
       </Stage>
     </div>

@@ -1,36 +1,34 @@
-import { Rect, Text, Group, Circle } from 'react-konva';
+import { Rect, Text, Group } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useRef, useMemo, useState } from 'react';
 
-interface TopicProps {
+interface ExpansionProps {
   x: number;
   y: number;
   text: string;
   onDragStart: () => void;
   onDragMove: (e: KonvaEventObject<DragEvent>) => void;
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
-  onClick?: () => void;
 }
 
-export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, onClick }: TopicProps) {
+export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragEnd }: ExpansionProps) {
   const groupRef = useRef<any>(null);
   const textRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isHovered, setIsHovered] = useState(false);
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
-  
+
   // Calculate dimensions when text changes
   useEffect(() => {
     if (textRef.current) {
       // First measure text without width constraint
       textRef.current.width(undefined);
-      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 400), 100);
+      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 300), 80); // Slightly smaller than Topics
       
       // Now set constrained width and measure height
       textRef.current.width(textWidth);
-      const textHeight = Math.max(textRef.current.getHeight(), 40);
+      const textHeight = Math.max(textRef.current.getHeight(), 30);
       
-      const padding = 24;
+      const padding = 20;
       setDimensions({
         width: textWidth + (padding * 2),
         height: textHeight + (padding * 2)
@@ -44,25 +42,15 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
     border: '#3a3a3a',
     text: '#ffffff',
     shadow: 'black',
-    hover: '#3a3a3a',
-    overlay: 'rgba(0, 0, 0, 0.7)',
-    button: {
-      background: '#3a3a3a',
-      hover: '#4a4a4a'
-    }
+    hover: '#3a3a3a'
   }), []);
 
-  // Cache the topic when it's not being dragged or hovered
+  // Cache the expansion when it's not being dragged or hovered
   useEffect(() => {
     if (groupRef.current && !isHovered) {
       groupRef.current.cache();
     }
   }, [x, y, text, dimensions, isHovered]);
-
-  const handleButtonClick = (e: KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true; // Stop event propagation
-    onClick?.();
-  };
 
   return (
     <Group
@@ -95,7 +83,6 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
           groupRef.current.cache();
         }
         setIsHovered(false);
-        setIsButtonHovered(false);
       }}
       perfectDrawEnabled={false}
     >
@@ -103,7 +90,7 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
         width={dimensions.width}
         height={dimensions.height}
         cornerRadius={12}
-        fill={colors.background}
+        fill={isHovered ? colors.hover : colors.background}
         stroke={colors.border}
         strokeWidth={2}
         shadowColor={colors.shadow}
@@ -114,75 +101,20 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
         offsetX={dimensions.width / 2}
         offsetY={dimensions.height / 2}
       />
-      
       <Text
         ref={textRef}
         text={text}
-        fontSize={16}
+        fontSize={14} // Slightly smaller than Topics
         fill={colors.text}
         align="center"
         verticalAlign="middle"
-        width={dimensions.width - 48}
-        height={dimensions.height - 48}
-        x={-dimensions.width / 2 + 24}
-        y={-dimensions.height / 2 + 24}
+        width={dimensions.width - 40}
+        height={dimensions.height - 40}
+        x={-dimensions.width / 2 + 20}
+        y={-dimensions.height / 2 + 20}
         lineHeight={1.2}
         perfectDrawEnabled={false}
       />
-      
-      {isHovered && (
-        <>
-          <Rect
-            width={dimensions.width}
-            height={dimensions.height}
-            cornerRadius={12}
-            fill={colors.overlay}
-            perfectDrawEnabled={false}
-            offsetX={dimensions.width / 2}
-            offsetY={dimensions.height / 2}
-          />
-
-          <Group
-            onMouseEnter={() => {
-              setIsButtonHovered(true);
-              const stage = groupRef.current?.getStage();
-              if (stage) {
-                stage.container().style.cursor = 'pointer';
-              }
-            }}
-            onMouseLeave={() => {
-              setIsButtonHovered(false);
-              const stage = groupRef.current?.getStage();
-              if (stage) {
-                stage.container().style.cursor = 'grab';
-              }
-            }}
-            onClick={handleButtonClick}
-          >
-            <Circle
-              radius={16}
-              fill={isButtonHovered ? colors.button.hover : colors.button.background}
-              perfectDrawEnabled={false}
-            />
-            <Rect
-              width={12}
-              height={2}
-              fill={colors.text}
-              offsetX={6}
-              offsetY={1}
-              perfectDrawEnabled={false}
-            />
-            <Rect
-              width={2}
-              height={12}
-              fill={colors.text}
-              offsetX={1}
-              offsetY={6}
-              perfectDrawEnabled={false}
-            />
-          </Group>
-        </>
-      )}
     </Group>
   );
 } 
