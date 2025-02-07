@@ -12,11 +12,22 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [debouncedUseCase, setDebouncedUseCase] = useState('');
   const [showTooltip, setShowTooltip] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Check if tooltip has been dismissed before
   useEffect(() => {
     const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
     setShowTooltip(!hasBeenDismissed);
+  }, []);
+
+  // Check system theme preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   // Debounce the input value
@@ -58,7 +69,17 @@ export default function Home() {
           <textarea
             rows={4}
             cols={50}
-            className="w-96 px-4 py-2 text-lg bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg"
+            className={`
+              w-96 px-4 py-2 text-lg rounded-lg
+              ${isDarkMode 
+                ? 'bg-[#1a1a1a] text-white placeholder-gray-400' 
+                : 'bg-white text-gray-900 placeholder-gray-500'
+              }
+              shadow-lg
+              border border-black/10
+              focus:outline-none
+              resize-none
+            `}
             placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

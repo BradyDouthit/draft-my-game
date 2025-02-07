@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Rect, Group } from 'react-konva';
 import Topic from './Topic';
 import { KonvaEventObject } from 'konva/lib/Node';
 
@@ -37,12 +37,46 @@ interface StagePosition {
   scale: number;
 }
 
+function LoadingTopics({ width, height }: { width: number; height: number }) {
+  // Calculate grid layout for ghost topics
+  const gridWidth = width * 0.6;
+  const verticalGap = 100;
+  const columns = 3;
+  const horizontalGap = gridWidth / (columns - 1);
+  const startX = (width - gridWidth) / 2;
+  const startY = (height - verticalGap * 3) / 2;
+
+  return (
+    <Group>
+      {Array(10).fill(0).map((_, i) => {
+        const row = Math.floor(i / columns);
+        const col = i % columns;
+        return (
+          <Rect
+            key={i}
+            x={startX + (col * horizontalGap)}
+            y={startY + (row * verticalGap)}
+            width={180}
+            height={60}
+            cornerRadius={12}
+            fill="#2a2a2a"
+            opacity={0.3}
+            perfectDrawEnabled={false}
+            offsetX={90}
+            offsetY={30}
+          />
+        );
+      })}
+    </Group>
+  );
+}
+
 export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([]);
   const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
   const [isDraggingTopic, setIsDraggingTopic] = useState(false);
   const [cursor, setCursor] = useState<string>('default');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Throttled stage position update
   const setThrottledStagePos = useCallback(
@@ -51,16 +85,6 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     }, 16), // ~60fps
     []
   );
-
-  // Check system theme preference
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
-
-    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
 
   // Throttled wheel handler
   const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
@@ -95,7 +119,8 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
   useEffect(() => {
     const generateTopics = async () => {
       if (!useCase) return;
-
+      
+      setIsLoading(true);
       try {
         const response = await fetch('/api/generate-topics', {
           method: 'POST',
@@ -108,17 +133,25 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         const result = await response.json();
         
         if (result.topics) {
-          // Arrange topics in a circle
-          const radius = Math.min(width, height) * 0.3;
-          const centerX = width / 2;
-          const centerY = height / 2;
-          
+          // Calculate grid layout
+          const gridWidth = width * 0.6;
+          const verticalGap = 100;
+          const gridHeight = verticalGap * 3;
+          const columns = 3;
+          const rows = 4;
+          const horizontalGap = gridWidth / (columns - 1);
+
+          // Center the entire grid in the viewport
+          const startX = (width - gridWidth) / 2;
+          const startY = (height - gridHeight) / 2;
+
           const arrangedTopics = result.topics.map((topic: string, i: number) => {
-            const angle = (i / result.topics.length) * 2 * Math.PI;
+            const row = Math.floor(i / columns);
+            const col = i % columns;
             return {
               id: Date.now().toString() + i,
-              x: centerX + radius * Math.cos(angle),
-              y: centerY + radius * Math.sin(angle),
+              x: startX + (col * horizontalGap),
+              y: startY + (row * verticalGap),
               text: topic,
             };
           });
@@ -128,6 +161,8 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         }
       } catch (error) {
         console.error('Error generating initial topics:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -215,7 +250,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
   }, []);
 
   return (
-    <div style={{ cursor, background: isDarkMode ? '#1a1a1a' : '#ffffff' }}>
+    <div style={{ cursor, background: '#1a1a1a' }}>
       <Stage 
         width={width} 
         height={height}
@@ -231,17 +266,20 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         perfectDrawEnabled={false}
       >
         <Layer>
-          {topics.map((topic) => (
-            <Topic
-              key={topic.id}
-              x={topic.x}
-              y={topic.y}
-              text={topic.text}
-              isDarkMode={isDarkMode}
-              onDragStart={() => handleDragStart(topic.id)}
-              onDragEnd={(e) => handleDragEnd(topic.id, e)}
-            />
-          ))}
+          {isLoading ? (
+            <LoadingTopics width={width} height={height} />
+          ) : (
+            topics.map((topic) => (
+              <Topic
+                key={topic.id}
+                x={topic.x}
+                y={topic.y}
+                text={topic.text}
+                onDragStart={() => handleDragStart(topic.id)}
+                onDragEnd={(e) => handleDragEnd(topic.id, e)}
+              />
+            ))
+          )}
         </Layer>
       </Stage>
     </div>
