@@ -1,6 +1,7 @@
-import { Rect, Text, Group } from 'react-konva';
+import { Rect, Text, Group, Circle } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useRef, useMemo, useState } from 'react';
+import IconButton from './IconButton';
 
 interface ExpansionProps {
   x: number;
@@ -9,20 +10,22 @@ interface ExpansionProps {
   onDragStart: () => void;
   onDragMove: (e: KonvaEventObject<DragEvent>) => void;
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
+  onDelete?: () => void;
 }
 
-export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragEnd }: ExpansionProps) {
+export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragEnd, onDelete }: ExpansionProps) {
   const groupRef = useRef<any>(null);
   const textRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isHovered, setIsHovered] = useState(false);
+  const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
 
   // Calculate dimensions when text changes
   useEffect(() => {
     if (textRef.current) {
       // First measure text without width constraint
       textRef.current.width(undefined);
-      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 300), 80); // Slightly smaller than Topics
+      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 300), 80);
       
       // Now set constrained width and measure height
       textRef.current.width(textWidth);
@@ -42,7 +45,12 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
     border: '#3a3a3a',
     text: '#ffffff',
     shadow: 'black',
-    hover: '#3a3a3a'
+    hover: '#3a3a3a',
+    delete: {
+      background: '#cc3333',
+      hover: '#dd4444',
+      text: '#ffffff'
+    }
   }), []);
 
   // Cache the expansion when it's not being dragged or hovered
@@ -51,6 +59,11 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
       groupRef.current.cache();
     }
   }, [x, y, text, dimensions, isHovered]);
+
+  const handleDeleteClick = (e: KonvaEventObject<MouseEvent>) => {
+    e.cancelBubble = true; // Stop event propagation
+    onDelete?.();
+  };
 
   return (
     <Group
@@ -83,6 +96,7 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
           groupRef.current.cache();
         }
         setIsHovered(false);
+        setIsDeleteButtonHovered(false);
       }}
       perfectDrawEnabled={false}
     >
@@ -101,10 +115,11 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
         offsetX={dimensions.width / 2}
         offsetY={dimensions.height / 2}
       />
+
       <Text
         ref={textRef}
         text={text}
-        fontSize={14} // Slightly smaller than Topics
+        fontSize={14}
         fill={colors.text}
         align="center"
         verticalAlign="middle"
@@ -115,6 +130,31 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
         lineHeight={1.2}
         perfectDrawEnabled={false}
       />
+
+      {/* Delete button */}
+      {isHovered && (
+        <IconButton
+          x={20}
+          type="delete"
+          isHovered={isDeleteButtonHovered}
+          colors={colors.delete}
+          onMouseEnter={() => {
+            setIsDeleteButtonHovered(true);
+            const stage = groupRef.current?.getStage();
+            if (stage) {
+              stage.container().style.cursor = 'pointer';
+            }
+          }}
+          onMouseLeave={() => {
+            setIsDeleteButtonHovered(false);
+            const stage = groupRef.current?.getStage();
+            if (stage) {
+              stage.container().style.cursor = 'grab';
+            }
+          }}
+          onClick={handleDeleteClick}
+        />
+      )}
     </Group>
   );
 } 

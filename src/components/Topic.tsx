@@ -1,6 +1,8 @@
 import { Rect, Text, Group, Circle } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useRef, useMemo, useState } from 'react';
+import IconButton from './IconButton';
+import Konva from 'konva';
 
 interface TopicProps {
   x: number;
@@ -10,14 +12,16 @@ interface TopicProps {
   onDragMove: (e: KonvaEventObject<DragEvent>) => void;
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
   onClick?: () => void;
+  onDelete?: () => void;
 }
 
-export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, onClick }: TopicProps) {
+export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, onClick, onDelete }: TopicProps) {
   const groupRef = useRef<any>(null);
   const textRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
   
   // Calculate dimensions when text changes
   useEffect(() => {
@@ -45,10 +49,19 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
     text: '#ffffff',
     shadow: 'black',
     hover: '#3a3a3a',
-    overlay: 'rgba(0, 0, 0, 0.7)',
+    overlay: {
+      fill: 'rgba(0, 0, 0, 0.7)',
+      blur: 3
+    },
     button: {
       background: '#3a3a3a',
-      hover: '#4a4a4a'
+      hover: '#4a4a4a',
+      text: '#ffffff'
+    },
+    delete: {
+      background: '#cc3333',
+      hover: '#dd4444',
+      text: '#ffffff'
     }
   }), []);
 
@@ -62,6 +75,11 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
   const handleButtonClick = (e: KonvaEventObject<MouseEvent>) => {
     e.cancelBubble = true; // Stop event propagation
     onClick?.();
+  };
+
+  const handleDeleteClick = (e: KonvaEventObject<MouseEvent>) => {
+    e.cancelBubble = true; // Stop event propagation
+    onDelete?.();
   };
 
   return (
@@ -96,6 +114,7 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
         }
         setIsHovered(false);
         setIsButtonHovered(false);
+        setIsDeleteButtonHovered(false);
       }}
       perfectDrawEnabled={false}
     >
@@ -132,17 +151,25 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
       
       {isHovered && (
         <>
+          {/* Blur overlay */}
           <Rect
             width={dimensions.width}
             height={dimensions.height}
             cornerRadius={12}
-            fill={colors.overlay}
+            fill={colors.overlay.fill}
+            filters={[Konva.Filters.Blur]}
+            blurRadius={colors.overlay.blur}
             perfectDrawEnabled={false}
             offsetX={dimensions.width / 2}
             offsetY={dimensions.height / 2}
           />
 
-          <Group
+          {/* Plus button - Left side */}
+          <IconButton
+            x={-20}
+            type="plus"
+            isHovered={isButtonHovered}
+            colors={colors.button}
             onMouseEnter={() => {
               setIsButtonHovered(true);
               const stage = groupRef.current?.getStage();
@@ -158,29 +185,30 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
               }
             }}
             onClick={handleButtonClick}
-          >
-            <Circle
-              radius={16}
-              fill={isButtonHovered ? colors.button.hover : colors.button.background}
-              perfectDrawEnabled={false}
-            />
-            <Rect
-              width={12}
-              height={2}
-              fill={colors.text}
-              offsetX={6}
-              offsetY={1}
-              perfectDrawEnabled={false}
-            />
-            <Rect
-              width={2}
-              height={12}
-              fill={colors.text}
-              offsetX={1}
-              offsetY={6}
-              perfectDrawEnabled={false}
-            />
-          </Group>
+          />
+
+          {/* Delete button - Right side */}
+          <IconButton
+            x={20}
+            type="delete"
+            isHovered={isDeleteButtonHovered}
+            colors={colors.delete}
+            onMouseEnter={() => {
+              setIsDeleteButtonHovered(true);
+              const stage = groupRef.current?.getStage();
+              if (stage) {
+                stage.container().style.cursor = 'pointer';
+              }
+            }}
+            onMouseLeave={() => {
+              setIsDeleteButtonHovered(false);
+              const stage = groupRef.current?.getStage();
+              if (stage) {
+                stage.container().style.cursor = 'grab';
+              }
+            }}
+            onClick={handleDeleteClick}
+          />
         </>
       )}
     </Group>

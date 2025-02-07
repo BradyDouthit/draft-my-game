@@ -344,6 +344,16 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     );
   }, []);
 
+  const handleTopicDelete = useCallback((topicId: string) => {
+    // Remove the topic and its associated expansions
+    setTopics(prev => prev.filter(t => t.id !== topicId));
+    setExpansions(prev => prev.filter(e => e.parentId !== topicId));
+  }, []);
+
+  const handleExpansionDelete = useCallback((expansionId: string) => {
+    setExpansions(prev => prev.filter(e => e.id !== expansionId));
+  }, []);
+
   return (
     <div style={{ cursor, background: '#1a1a1a' }}>
       <Stage 
@@ -394,6 +404,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
               onDragMove={(e) => handleDragMove(topic.id, e)}
               onDragEnd={(e) => handleDragEnd(topic.id, e)}
               onClick={() => handleTopicClick(topic.id, topic.x, topic.y)}
+              onDelete={() => handleTopicDelete(topic.id)}
             />
           ))}
 
@@ -407,6 +418,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
               onDragStart={() => handleExpansionDragStart()}
               onDragMove={(e) => handleExpansionDragMove(expansion.id, e)}
               onDragEnd={(e) => handleExpansionDragEnd(expansion.id, e)}
+              onDelete={() => handleExpansionDelete(expansion.id)}
             />
           ))}
         </Layer>
