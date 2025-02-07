@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { promises as fs } from "fs";
 import path from "path";
+import { validateAPIKey, readSystemPrompt, createErrorResponse, parseJSON } from "@/utils/api-validation";
+import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Initialize Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: DEFAULT_MODELS.TOPIC_COMBINATION });
+
+// Log model configuration
+console.log(`[Topic Combination] Using model: ${DEFAULT_MODELS.TOPIC_COMBINATION}`);
 
 interface CombinedTopicResponse {
   combinedTopic: string;
@@ -31,10 +35,7 @@ export async function POST(request: Request) {
   try {
     // Validate request
     if (!request.body) {
-      return NextResponse.json(
-        { error: "Invalid request" },
-        { status: 400 }
-      );
+      return createErrorResponse("Invalid request", 400);
     }
 
     const body = await request.json();
@@ -42,89 +43,51 @@ export async function POST(request: Request) {
 
     // Input validation
     if (!topic1 || typeof topic1 !== 'string' || !topic2 || typeof topic2 !== 'string') {
-      return NextResponse.json(
-        { error: "Please provide two topics" },
-        { status: 400 }
-      );
+      return createErrorResponse("Please provide two topics", 400);
     }
 
     if (topic1.length > 100 || topic2.length > 100) {
-      return NextResponse.json(
-        { error: "Topics are too long" },
-        { status: 400 }
-      );
+      return createErrorResponse("Topics are too long", 400);
     }
 
-    // API key validation
-    if (!process.env.GOOGLE_API_KEY) {
-      console.error("Missing API configuration");
-      return NextResponse.json(
-        { error: "Service temporarily unavailable" },
-        { status: 503 }
-      );
+    // Validate API key
+    const keyError = await validateAPIKey();
+    if (keyError) {
+      return createErrorResponse(keyError.error, keyError.status);
     }
 
-    // Read and validate system prompt
-    let systemPrompt: string;
-    try {
-      const systemPromptPath = path.join(
-        process.cwd(),
-        "src",
-        "app",
-        "api",
-        "combine-topics",
-        "systemPrompt.txt"
-      );
-      systemPrompt = await fs.readFile(systemPromptPath, "utf-8");
-      
-      if (!systemPrompt || systemPrompt.length === 0) {
-        throw new Error("System prompt is empty");
-      }
-    } catch (error) {
-      console.error("Error reading system prompt:", error);
-      return NextResponse.json(
-        { error: "Service configuration error" },
-        { status: 503 }
-      );
+    // Read system prompt
+    const { prompt, error: promptError } = await readSystemPrompt(
+      path.join(process.cwd(), "src", "app", "api", "combine-topics", "systemPrompt.txt")
+    );
+    if (promptError) {
+      return createErrorResponse(promptError.error, promptError.status);
     }
 
     // Make API call
-    const prompt = `${systemPrompt}\n\n<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`;
-    const result = await model.generateContent(prompt);
+    console.log(`[Topic Combination] Making request with model: ${DEFAULT_MODELS.TOPIC_COMBINATION}`);
+    const result = await model.generateContent(
+      `${prompt}\n\n<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`
+    );
     const response = await result.response;
-    let content = response.text();
+    const content = response.text();
 
-    let parsedResult: unknown;
-    try {
-      if (content.includes("```json")) {
-        content = content.replaceAll("```json", "").replaceAll("```", "");
-      }
-      
-      parsedResult = JSON.parse(content);
-      console.log("Parsed response:", parsedResult);
-    } catch (e) {
-      console.error("Failed to parse response:", content);
-      return NextResponse.json(
-        { error: "Unable to process response" },
-        { status: 500 }
-      );
+    // Log full response
+    console.log('[Topic Combination] Raw response:', content);
+
+    // Parse and validate response
+    const { data, error: parseError } = await parseJSON<CombinedTopicResponse>(content);
+    if (parseError) {
+      return createErrorResponse(parseError.error, parseError.status);
     }
 
-    // Validate the response structure
-    if (!validateCombinedResponse(parsedResult)) {
-      console.error("Invalid response structure");
-      return NextResponse.json(
-        { error: "Unable to generate valid combination" },
-        { status: 500 }
-      );
+    if (!validateCombinedResponse(data)) {
+      return createErrorResponse("Unable to generate valid combination", 500);
     }
 
-    return NextResponse.json(parsedResult);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Unexpected error:", error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return createErrorResponse("Something went wrong");
   }
 }

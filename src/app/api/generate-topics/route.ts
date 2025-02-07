@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { promises as fs } from "fs";
 import path from "path";
+import { validateAPIKey, readSystemPrompt, createErrorResponse, parseJSON } from "@/utils/api-validation";
+import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Initialize Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: DEFAULT_MODELS.TOPIC_GENERATION });
+
+// Log model configuration
+console.log(`[Topic Generation] Using model: ${DEFAULT_MODELS.TOPIC_GENERATION}`);
 
 interface TopicsResponse {
   topics: string[];
@@ -24,96 +28,58 @@ export async function POST(request: Request) {
   try {
     // Validate request
     if (!request.body) {
-      return NextResponse.json(
-        { error: "Request body is required" },
-        { status: 400 }
-      );
+      return createErrorResponse("Request body is required", 400);
     }
 
     const body = await request.json();
     const { useCase } = body;
 
     if (!useCase || typeof useCase !== "string") {
-      return NextResponse.json(
-        { error: "Use case must be a non-empty string" },
-        { status: 400 }
-      );
+      return createErrorResponse("Use case must be a non-empty string", 400);
     }
 
     if (useCase.length > 200) {
-      return NextResponse.json(
-        { error: "Use case is too long (max 200 characters)" },
-        { status: 400 }
-      );
+      return createErrorResponse("Use case is too long (max 200 characters)", 400);
     }
 
-    // API key validation
-    if (!process.env.GOOGLE_API_KEY) {
-      return NextResponse.json(
-        { error: "API configuration is missing" },
-        { status: 500 }
-      );
+    // Validate API key
+    const keyError = await validateAPIKey();
+    if (keyError) {
+      return createErrorResponse(keyError.error, keyError.status);
     }
 
-    // Read and validate system prompt
-    let systemPrompt: string;
-    try {
-      const systemPromptPath = path.join(
-        process.cwd(),
-        "src",
-        "app",
-        "api",
-        "generate-topics",
-        "generateTopicsSystemPrompt.txt"
-      );
-      systemPrompt = await fs.readFile(systemPromptPath, "utf-8");
-
-      if (!systemPrompt || systemPrompt.length === 0) {
-        throw new Error("System prompt is empty");
-      }
-    } catch (error) {
-      console.error("Error reading system prompt:", error);
-      return NextResponse.json(
-        { error: "Failed to load system configuration" },
-        { status: 500 }
-      );
+    // Read system prompt
+    const { prompt, error: promptError } = await readSystemPrompt(
+      path.join(process.cwd(), "src", "app", "api", "generate-topics", "generateTopicsSystemPrompt.txt")
+    );
+    if (promptError) {
+      return createErrorResponse(promptError.error, promptError.status);
     }
 
     // Make API call
-    const prompt = `${systemPrompt}\n\nGenerate 10 interesting ideas relevant to someone who is ${useCase}.`;
-    const result = await model.generateContent(prompt);
+    console.log(`[Topic Generation] Making request with model: ${DEFAULT_MODELS.TOPIC_GENERATION}`);
+    const result = await model.generateContent(
+      `${prompt}\n\nGenerate 10 interesting ideas relevant to someone who is ${useCase}.`
+    );
     const response = await result.response;
-    let content = response.text();
+    const content = response.text();
 
-    let parsedResult: unknown;
-    try {
-      if (content.includes("```json")) {
-        content = content.replaceAll("```json", "").replaceAll("```", "");
-      }
-      parsedResult = JSON.parse(content);
-    } catch (e) {
-      console.error("Failed to parse AI response:", content);
-      return NextResponse.json(
-        { error: "AI response was not in valid JSON format" },
-        { status: 500 }
-      );
+    // Log full response
+    console.log('[Topic Generation] Raw response:', content);
+
+    // Parse and validate response
+    const { data, error: parseError } = await parseJSON<TopicsResponse>(content);
+    if (parseError) {
+      return createErrorResponse(parseError.error, parseError.status);
     }
 
-    // Validate the response structure
-    if (!validateTopicsResponse(parsedResult)) {
-      console.error("Invalid response structure:", parsedResult);
-      return NextResponse.json(
-        { error: "AI response did not match expected format" },
-        { status: 500 }
-      );
+    if (!validateTopicsResponse(data)) {
+      return createErrorResponse("AI response did not match expected format", 500);
     }
 
-    return NextResponse.json(parsedResult);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Unexpected error generating topics:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred" },
-      { status: 500 }
-    );
+    return createErrorResponse("An unexpected error occurred");
   }
 }
