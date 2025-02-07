@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { promises as fs } from "fs";
 import path from "path";
 
-// Initialize Mistral client with the correct configuration
-const token = process.env.MISTRAL_TOKEN;
-const endpoint = "https://models.inference.ai.azure.com";
-const modelName = "Mistral-large-2407";
-
-const client = new Mistral({
-  apiKey: token || "dummy-key",
-  serverURL: endpoint,
-});
+// Initialize Google AI client
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 interface TopicsResponse {
   topics: string[];
@@ -54,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // API key validation
-    if (!token) {
+    if (!process.env.GOOGLE_API_KEY) {
       return NextResponse.json(
         { error: "API configuration is missing" },
         { status: 500 }
@@ -86,28 +80,10 @@ export async function POST(request: Request) {
     }
 
     // Make API call
-    const response = await client.chat.complete({
-      model: modelName,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: `Generate 10 interesting ideas relevant to someone who is ${useCase}.`,
-        },
-      ],
-      temperature: 1.0,
-    });
-
-    let content = response.choices?.[0]?.message?.content;
-    if (!content || Array.isArray(content)) {
-      return NextResponse.json(
-        { error: "Invalid response from AI service" },
-        { status: 500 }
-      );
-    }
+    const prompt = `${systemPrompt}\n\nGenerate 10 interesting ideas relevant to someone who is ${useCase}.`;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let content = response.text();
 
     let parsedResult: unknown;
     try {

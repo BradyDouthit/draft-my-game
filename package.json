@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@mistralai/mistralai": "^1.5.0",
     "konva": "^9.3.18",
     "next": "15.1.6",

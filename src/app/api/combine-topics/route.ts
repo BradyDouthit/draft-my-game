@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
-import { Mistral } from "@mistralai/mistralai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { promises as fs } from "fs";
 import path from "path";
 
-// Initialize Mistral client with the correct configuration
-const token = process.env.MISTRAL_TOKEN;
-const endpoint = "https://models.inference.ai.azure.com";
-const modelName = "Mistral-large-2407";
-
-const client = new Mistral({
-  apiKey: token || "dummy-key",
-  serverURL: endpoint,
-});
+// Initialize Google AI client
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 interface CombinedTopicResponse {
   combinedTopic: string;
@@ -62,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     // API key validation
-    if (!token) {
+    if (!process.env.GOOGLE_API_KEY) {
       console.error("Missing API configuration");
       return NextResponse.json(
         { error: "Service temporarily unavailable" },
@@ -95,29 +89,10 @@ export async function POST(request: Request) {
     }
 
     // Make API call
-    const response = await client.chat.complete({
-      model: modelName,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: `<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`,
-        },
-      ],
-      temperature: 1.0,
-    });
-
-    let  content = response.choices?.[0]?.message?.content;
-    if (!content || Array.isArray(content)) {
-      console.error("Invalid AI service response");
-      return NextResponse.json(
-        { error: "Unable to generate combination" },
-        { status: 500 }
-      );
-    }
+    const prompt = `${systemPrompt}\n\n<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let content = response.text();
 
     let parsedResult: unknown;
     try {
