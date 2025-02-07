@@ -1,8 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Topic from './Topic';
-import Grid from './Grid';
 import { KonvaEventObject } from 'konva/lib/Node';
+
+// Add throttle function
+function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return function(this: any, ...args: Parameters<T>) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
 
 interface KonvaStageProps {
   width: number;
@@ -30,6 +44,14 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
   const [cursor, setCursor] = useState<string>('default');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Throttled stage position update
+  const setThrottledStagePos = useCallback(
+    throttle((newPos: StagePosition) => {
+      setStagePos(newPos);
+    }, 16), // ~60fps
+    []
+  );
+
   // Check system theme preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -40,7 +62,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  // Handle wheel events for zooming
+  // Throttled wheel handler
   const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
 
@@ -62,12 +84,12 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     // Limit zoom scale
     if (newScale < 0.1 || newScale > 5) return;
 
-    setStagePos({
+    setThrottledStagePos({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
       scale: newScale,
     });
-  }, [stagePos]);
+  }, [stagePos, setThrottledStagePos]);
 
   // Generate initial topics when useCase changes
   useEffect(() => {
@@ -87,7 +109,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         
         if (result.topics) {
           // Arrange topics in a circle
-          const radius = Math.min(width, height) * 0.3; // 30% of the smaller dimension
+          const radius = Math.min(width, height) * 0.3;
           const centerX = width / 2;
           const centerY = height / 2;
           
@@ -102,7 +124,6 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
           });
 
           setTopics(arrangedTopics);
-          // Reset stage position when new topics are generated
           setStagePos({ x: 0, y: 0, scale: 1 });
         }
       } catch (error) {
@@ -113,12 +134,12 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     generateTopics();
   }, [useCase, width, height]);
 
-  const handleDragStart = (topicId: string) => {
+  const handleDragStart = useCallback((topicId: string) => {
     setIsDraggingTopic(true);
     setCursor('grabbing');
-  };
+  }, []);
 
-  const handleDragEnd = async (topicId: string, e: KonvaEventObject<DragEvent>) => {
+  const handleDragEnd = useCallback(async (topicId: string, e: KonvaEventObject<DragEvent>) => {
     setIsDraggingTopic(false);
     setCursor('grab');
     const draggedTopic = topics.find(t => t.id === topicId);
@@ -171,27 +192,27 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         t.id === topicId ? { ...t, x: newX, y: newY } : t
       )
     );
-  };
+  }, [topics]);
 
-  const handleStageDragEnd = (e: KonvaEventObject<DragEvent>) => {
+  const handleStageDragEnd = useCallback((e: KonvaEventObject<DragEvent>) => {
     if (!isDraggingTopic) {
-      setStagePos({
+      setThrottledStagePos({
         ...stagePos,
         x: e.target.x(),
         y: e.target.y(),
       });
     }
-  };
+  }, [isDraggingTopic, stagePos, setThrottledStagePos]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback(() => {
     if (!isDraggingTopic) {
       setCursor('grab');
     }
-  };
+  }, [isDraggingTopic]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setCursor('default');
-  };
+  }, []);
 
   return (
     <div style={{ cursor, background: isDarkMode ? '#1a1a1a' : '#ffffff' }}>
@@ -207,16 +228,9 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
         y={stagePos.y}
         scaleX={stagePos.scale}
         scaleY={stagePos.scale}
+        perfectDrawEnabled={false}
       >
         <Layer>
-          <Grid 
-            width={width}
-            height={height}
-            scale={stagePos.scale}
-            offsetX={stagePos.x}
-            offsetY={stagePos.y}
-            isDarkMode={isDarkMode}
-          />
           {topics.map((topic) => (
             <Topic
               key={topic.id}
