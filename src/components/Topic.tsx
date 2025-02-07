@@ -3,6 +3,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useRef, useMemo, useState } from 'react';
 import IconButton from './IconButton';
 import Konva from 'konva';
+import { COLORS, SHADOWS, DIMENSIONS } from '../utils/styles';
 
 interface TopicProps {
   x: number;
@@ -121,14 +122,14 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
       <Rect
         width={dimensions.width}
         height={dimensions.height}
-        cornerRadius={12}
-        fill={colors.background}
-        stroke={colors.border}
+        cornerRadius={DIMENSIONS.cornerRadius}
+        fill={COLORS.background}
+        stroke={COLORS.border}
         strokeWidth={2}
-        shadowColor={colors.shadow}
-        shadowBlur={isHovered ? 15 : 10}
-        shadowOpacity={isHovered ? 0.4 : 0.2}
-        shadowOffset={{ x: 2, y: 2 }}
+        shadowColor={COLORS.shadow}
+        shadowBlur={isHovered ? SHADOWS.hover.blur : SHADOWS.normal.blur}
+        shadowOpacity={isHovered ? SHADOWS.hover.opacity : SHADOWS.normal.opacity}
+        shadowOffset={SHADOWS.normal.offset}
         perfectDrawEnabled={false}
         offsetX={dimensions.width / 2}
         offsetY={dimensions.height / 2}
@@ -138,7 +139,7 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
         ref={textRef}
         text={text}
         fontSize={16}
-        fill={colors.text}
+        fill={COLORS.text}
         align="center"
         verticalAlign="middle"
         width={dimensions.width - 48}
@@ -155,21 +156,23 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
           <Rect
             width={dimensions.width}
             height={dimensions.height}
-            cornerRadius={12}
-            fill={colors.overlay.fill}
+            cornerRadius={DIMENSIONS.cornerRadius}
+            fill={COLORS.overlay.fill}
             filters={[Konva.Filters.Blur]}
-            blurRadius={colors.overlay.blur}
-            perfectDrawEnabled={false}
+            blurRadius={COLORS.overlay.blur}
+            perfectDrawEnabled={true}
+            shadowForStrokeEnabled={false}
             offsetX={dimensions.width / 2}
             offsetY={dimensions.height / 2}
+            listening={false}
           />
 
           {/* Plus button - Left side */}
           <IconButton
-            x={-20}
+            x={-DIMENSIONS.buttonSpacing}
             type="plus"
             isHovered={isButtonHovered}
-            colors={colors.button}
+            colors={COLORS.button}
             onMouseEnter={() => {
               setIsButtonHovered(true);
               const stage = groupRef.current?.getStage();
@@ -189,10 +192,10 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
 
           {/* Delete button - Right side */}
           <IconButton
-            x={20}
+            x={DIMENSIONS.buttonSpacing}
             type="delete"
             isHovered={isDeleteButtonHovered}
-            colors={colors.delete}
+            colors={COLORS.delete}
             onMouseEnter={() => {
               setIsDeleteButtonHovered(true);
               const stage = groupRef.current?.getStage();
