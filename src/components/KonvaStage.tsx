@@ -47,47 +47,12 @@ interface ExpansionNode {
   text: string;
 }
 
-function LoadingTopics({ width, height }: { width: number; height: number }) {
-  // Calculate grid layout for ghost topics
-  const gridWidth = width * 0.6;
-  const verticalGap = 100;
-  const columns = 3;
-  const horizontalGap = gridWidth / (columns - 1);
-  const startX = (width - gridWidth) / 2;
-  const startY = (height - verticalGap * 3) / 2;
-
-  return (
-    <Group>
-      {Array(10).fill(0).map((_, i) => {
-        const row = Math.floor(i / columns);
-        const col = i % columns;
-        return (
-          <Rect
-            key={i}
-            x={startX + (col * horizontalGap)}
-            y={startY + (row * verticalGap)}
-            width={180}
-            height={60}
-            cornerRadius={12}
-            fill="#2a2a2a"
-            opacity={0.3}
-            perfectDrawEnabled={false}
-            offsetX={90}
-            offsetY={30}
-          />
-        );
-      })}
-    </Group>
-  );
-}
-
 export default function KonvaStage({ width, height, useCase, onLoadingChange }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([]);
   const [expansions, setExpansions] = useState<ExpansionNode[]>([]);
   const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
   const [isDraggingTopic, setIsDraggingTopic] = useState(false);
   const [cursor, setCursor] = useState<string>('default');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Throttled stage position update
   const setThrottledStagePos = useCallback(
