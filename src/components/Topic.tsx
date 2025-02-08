@@ -24,24 +24,41 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
   
+  const padding = 24;
+  
   // Calculate dimensions when text changes
   useEffect(() => {
     if (textRef.current) {
-      // First measure text without width constraint
-      textRef.current.width(undefined);
-      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 400), 100);
+      const maxWidth = 400;
+      const textNode = textRef.current;
+
+      // Reset any previous constraints
+      textNode.width(undefined);
+      textNode.height(undefined);
       
-      // Now set constrained width and measure height
-      textRef.current.width(textWidth);
-      const textHeight = Math.max(textRef.current.getHeight(), 40);
+      // Set width and wrap mode
+      textNode.width(maxWidth - (padding * 2));
+      textNode.wrap('word');
       
-      const padding = 24;
+      // Force a redraw to get accurate height
+      const layer = textNode.getLayer();
+      if (layer) {
+        layer.batchDraw();
+      }
+
+      // Get the wrapped height
+      const wrappedHeight = textNode.height();
+      const finalHeight = Math.max(wrappedHeight + (padding * 2), 80);
+
       setDimensions({
-        width: textWidth + (padding * 2),
-        height: textHeight + (padding * 2)
+        width: maxWidth,
+        height: finalHeight
       });
+
+      // Update text height to match container
+      textNode.height(finalHeight - (padding * 2));
     }
-  }, [text]);
+  }, [text, padding]);
 
   // Memoize colors and styles
   const colors = useMemo(() => ({
@@ -142,11 +159,12 @@ export default function Topic({ x, y, text, onDragStart, onDragMove, onDragEnd, 
         fill={COLORS.text}
         align="center"
         verticalAlign="middle"
-        width={dimensions.width - 48}
-        height={dimensions.height - 48}
-        x={-dimensions.width / 2 + 24}
-        y={-dimensions.height / 2 + 24}
-        lineHeight={1.2}
+        width={dimensions.width - (padding * 2)}
+        wrap="word"
+        x={-dimensions.width / 2 + padding}
+        y={-dimensions.height / 2 + padding}
+        height={dimensions.height - (padding * 2)}
+        lineHeight={1.4}
         perfectDrawEnabled={false}
       />
       

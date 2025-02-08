@@ -10,7 +10,7 @@ const KonvaStage = dynamic(() => import('../components/KonvaStage'), {
 export default function Home() {
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [inputValue, setInputValue] = useState('');
-  const [debouncedUseCase, setDebouncedUseCase] = useState('');
+  const [useCase, setUseCase] = useState('');
   const [showTooltip, setShowTooltip] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -29,15 +29,6 @@ export default function Home() {
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
-
-  // Debounce the input value
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedUseCase(inputValue);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [inputValue]);
 
   // Update stage size on mount and window resize
   useEffect(() => {
@@ -58,10 +49,17 @@ export default function Home() {
     localStorage.setItem('tooltipDismissed', 'true');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      setUseCase(inputValue);
+    }
+  };
+
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       {/* Canvas */}
-      <KonvaStage width={stageSize.width} height={stageSize.height} useCase={debouncedUseCase} />
+      <KonvaStage width={stageSize.width} height={stageSize.height} useCase={useCase} />
 
       {/* Command Palette */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
@@ -83,6 +81,7 @@ export default function Home() {
             placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           
           {/* Tooltip */}
@@ -129,8 +128,9 @@ export default function Home() {
               <div className="space-y-2">
                 <p className="font-medium mb-2">How to use this tool:</p>
                 <p>1. Enter your role or use case above (e.g., "entrepreneur", "author", "student")</p>
-                <p>2. Drag and combine topics on the canvas to generate new ideas</p>
-                <p>3. The AI will tailor combinations based on your specified role</p>
+                <p>2. Press Enter to generate topics</p>
+                <p>3. Drag and combine topics on the canvas to generate new ideas</p>
+                <p>4. The AI will tailor combinations based on your specified role</p>
               </div>
             </div>
           </div>
