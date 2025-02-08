@@ -13,6 +13,7 @@ export default function Home() {
   const [useCase, setUseCase] = useState('');
   const [showTooltip, setShowTooltip] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check if tooltip has been dismissed before
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function Home() {
     localStorage.setItem('tooltipDismissed', 'true');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       setUseCase(inputValue);
@@ -59,16 +60,37 @@ export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       {/* Canvas */}
-      <KonvaStage width={stageSize.width} height={stageSize.height} useCase={useCase} />
+      <KonvaStage 
+        width={stageSize.width} 
+        height={stageSize.height} 
+        useCase={useCase}
+        onLoadingChange={setIsLoading}
+      />
 
       {/* Command Palette */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
         <div className="relative">
+          {/* Loading gradient border container */}
+          <div className={`
+            absolute -inset-[2px] rounded-lg
+            ${isLoading ? 'opacity-100' : 'opacity-0'}
+            transition-opacity duration-300
+            pointer-events-none
+            bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 to-blue-500
+            animate-rotate-gradient
+            p-[2px]
+          `}>
+            <div className={`
+              h-full w-full rounded-lg
+              ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}
+            `} />
+          </div>
+
           <textarea
             rows={4}
             cols={50}
             className={`
-              w-96 px-4 py-2 text-lg rounded-lg
+              relative w-96 px-4 py-2 text-lg rounded-lg
               ${isDarkMode 
                 ? 'bg-[#1a1a1a] text-white placeholder-gray-400' 
                 : 'bg-white text-gray-900 placeholder-gray-500'
@@ -77,13 +99,16 @@ export default function Home() {
               border border-black/10
               focus:outline-none
               resize-none
+              transition-all duration-300
+              ${isLoading ? 'border-transparent opacity-50' : ''}
             `}
             placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={isLoading}
           />
-          
+
           {/* Tooltip */}
           <div 
             className={`

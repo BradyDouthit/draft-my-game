@@ -23,6 +23,7 @@ interface KonvaStageProps {
   width: number;
   height: number;
   useCase: string;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 interface TopicState {
@@ -80,7 +81,7 @@ function LoadingTopics({ width, height }: { width: number; height: number }) {
   );
 }
 
-export default function KonvaStage({ width, height, useCase }: KonvaStageProps) {
+export default function KonvaStage({ width, height, useCase, onLoadingChange }: KonvaStageProps) {
   const [topics, setTopics] = useState<TopicState[]>([]);
   const [expansions, setExpansions] = useState<ExpansionNode[]>([]);
   const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
@@ -130,7 +131,7 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     const generateTopics = async () => {
       if (!useCase) return;
       
-      setIsLoading(true);
+      onLoadingChange?.(true);
       try {
         const response = await fetch('/api/generate-topics', {
           method: 'POST',
@@ -172,12 +173,12 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
       } catch (error) {
         console.error('Error generating initial topics:', error);
       } finally {
-        setIsLoading(false);
+        onLoadingChange?.(false);
       }
     };
 
     generateTopics();
-  }, [useCase, width, height]);
+  }, [useCase, width, height, onLoadingChange]);
 
   const handleDragStart = useCallback((topicId: string) => {
     setIsDraggingTopic(true);
