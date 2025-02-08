@@ -271,45 +271,62 @@ export default function KonvaStage({ width, height, useCase }: KonvaStageProps) 
     setCursor('default');
   }, []);
 
-  const handleTopicClick = useCallback((topicId: string, topicX: number, topicY: number) => {
+  const handleTopicClick = useCallback(async (topicId: string, topicX: number, topicY: number) => {
     // Check if topic already has expansions
     const existingExpansions = expansions.filter(e => e.parentId === topicId);
-    
-    if (existingExpansions.length === 0) {
-      // Create 3 expansion nodes in a semi-circle above the topic
-      const radius = 150;
-      const newExpansions: ExpansionNode[] = [
-        {
-          id: Date.now().toString() + '-1',
-          parentId: topicId,
-          x: topicX + radius * Math.cos(Math.PI / 6),
-          y: topicY - radius * Math.sin(Math.PI / 6),
-          text: 'Expansion 1'
-        },
-        {
-          id: Date.now().toString() + '-2',
-          parentId: topicId,
-          x: topicX,
-          y: topicY - radius,
-          text: 'Expansion 2'
-        },
-        {
-          id: Date.now().toString() + '-3',
-          parentId: topicId,
-          x: topicX - radius * Math.cos(Math.PI / 6),
-          y: topicY - radius * Math.sin(Math.PI / 6),
-          text: 'Expansion 3'
-        }
-      ];
-      
-      console.log('Creating new expansions:', newExpansions);
-      setExpansions(prev => [...prev, ...newExpansions]);
-    } else {
+
+    if (existingExpansions.length > 0) {
       // Remove existing expansions for this topic
       console.log('Removing expansions for topic:', topicId);
       setExpansions(prev => prev.filter(e => e.parentId !== topicId));
+      return;
     }
-  }, [expansions]);
+
+    // Find the clicked topic to get its text
+    const clickedTopic = topics.find(t => t.id === topicId);
+    if (!clickedTopic) return;
+
+    try {
+      const response = await fetch('/api/expand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: clickedTopic.text })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch expansion data', await response.text());
+        return;
+      }
+
+      const data = await response.json();
+      const expansionsArray: string[] = data.expansions;
+      if (!expansionsArray || expansionsArray.length === 0) {
+        console.warn('No expansions returned from the API');
+        return;
+      }
+
+      const radius = 150;
+      const n = expansionsArray.length;
+      // Use a fixed angle delta of 30 degrees (pi/6) if more than one expansion is returned
+      const angleDelta = n > 1 ? Math.PI / 6 : 0;
+      const startAngle = n > 1 ? (Math.PI / 2 - ((n - 1) * angleDelta) / 2) : Math.PI / 2;
+
+      const newExpansions = expansionsArray.map((expansion: string, i: number) => {
+        const angle = startAngle + (n > 1 ? i * angleDelta : 0);
+        return {
+          id: Date.now().toString() + '-' + i,
+          parentId: topicId,
+          x: topicX + radius * Math.cos(angle),
+          y: topicY - radius * Math.sin(angle),
+          text: expansion
+        };
+      });
+      console.log('Creating new expansions:', newExpansions);
+      setExpansions(prev => [...prev, ...newExpansions]);
+    } catch (error) {
+      console.error('Error fetching expansion:', error);
+    }
+  }, [expansions, topics]);
 
   const handleExpansionDragStart = () => {
     setIsDraggingTopic(true);

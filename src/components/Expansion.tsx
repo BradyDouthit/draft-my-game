@@ -25,17 +25,16 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
   // Calculate dimensions when text changes
   useEffect(() => {
     if (textRef.current) {
-      // First measure text without width constraint
-      textRef.current.width(undefined);
-      const textWidth = Math.max(Math.min(textRef.current.getWidth(), 300), 80);
+      // Set a fixed width for the text
+      const maxWidth = 300;
+      textRef.current.width(maxWidth);
       
-      // Now set constrained width and measure height
-      textRef.current.width(textWidth);
-      const textHeight = Math.max(textRef.current.getHeight(), 30);
+      // Let the height adjust automatically based on content
+      const textHeight = textRef.current.getHeight();
       
       const padding = 20;
       setDimensions({
-        width: textWidth + (padding * 2),
+        width: maxWidth + (padding * 2),
         height: textHeight + (padding * 2)
       });
     }
@@ -112,10 +111,10 @@ export default function Expansion({ x, y, text, onDragStart, onDragMove, onDragE
         align="center"
         verticalAlign="middle"
         width={dimensions.width - 40}
-        height={dimensions.height - 40}
+        wrap="word"
         x={-dimensions.width / 2 + 20}
         y={-dimensions.height / 2 + 20}
-        lineHeight={1.2}
+        lineHeight={1.4}
         perfectDrawEnabled={false}
       />
 
