@@ -178,7 +178,30 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     };
 
     generateTopics();
-  }, [useCase, width, height, onLoadingChange]);
+  }, [useCase, onLoadingChange]);
+
+  // Add a separate effect to reposition topics when window size changes
+  useEffect(() => {
+    if (topics.length === 0) return;
+
+    // Recalculate positions with new dimensions
+    const gridWidth = width * 0.6;
+    const verticalGap = 100;
+    const columns = 3;
+    const horizontalGap = gridWidth / (columns - 1);
+    const startX = (width - gridWidth) / 2;
+    const startY = (height - verticalGap * 3) / 2;
+
+    setTopics(prev => prev.map((topic, i) => {
+      const row = Math.floor(i / columns);
+      const col = i % columns;
+      return {
+        ...topic,
+        x: startX + (col * horizontalGap),
+        y: startY + (row * verticalGap),
+      };
+    }));
+  }, [width, height]);
 
   const handleDragStart = useCallback((topicId: string) => {
     setIsDraggingTopic(true);
