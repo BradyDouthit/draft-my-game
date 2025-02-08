@@ -39,11 +39,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { topic1, topic2 } = body;
+    const { topic1, topic2, useCase } = body;
 
     // Input validation
     if (!topic1 || typeof topic1 !== 'string' || !topic2 || typeof topic2 !== 'string') {
       return createErrorResponse("Please provide two topics", 400);
+    }
+
+    if (!useCase || typeof useCase !== 'string') {
+      return createErrorResponse("Please provide a use case", 400);
     }
 
     // Validate API key
@@ -63,7 +67,7 @@ export async function POST(request: Request) {
     // Make API call
     console.log(`[Topic Combination] Making request with model: ${DEFAULT_MODELS.TOPIC_COMBINATION}`);
     const result = await model.generateContent(
-      `${prompt}\n\n<topics>\n    <topic1>${topic1}</topic1>\n    <topic2>${topic2}</topic2>\n</topics>`
+      `${prompt}\n\n<context>\n    <useCase>${useCase}</useCase>\n    <topics>\n        <topic1>${topic1}</topic1>\n        <topic2>${topic2}</topic2>\n    </topics>\n</context>`
     );
     const response = await result.response;
     const content = response.text();

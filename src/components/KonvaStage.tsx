@@ -210,6 +210,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
           body: JSON.stringify({
             topic1: draggedTopic.text,
             topic2: otherTopic.text,
+            useCase
           }),
         });
 
@@ -238,7 +239,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
         t.id === topicId ? { ...t, x: newX, y: newY } : t
       )
     );
-  }, [topics]);
+  }, [topics, useCase]);
 
   const handleStageDragEnd = useCallback((e: KonvaEventObject<DragEvent>) => {
     if (!isDraggingTopic) {
@@ -279,7 +280,10 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
       const response = await fetch('/api/expand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: clickedTopic.text })
+        body: JSON.stringify({ 
+          topic: clickedTopic.text,
+          useCase
+        })
       });
 
       if (!response.ok) {
@@ -315,7 +319,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     } catch (error) {
       console.error('Error fetching expansion:', error);
     }
-  }, [expansions, topics]);
+  }, [expansions, topics, useCase]);
 
   const handleExpansionDragStart = () => {
     setIsDraggingTopic(true);

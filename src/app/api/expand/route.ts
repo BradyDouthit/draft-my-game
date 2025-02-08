@@ -52,9 +52,13 @@ export async function POST(request: Request) {
       return createErrorResponse("Invalid request", 400);
     }
     const body = await request.json();
-    const { topic } = body;
+    const { topic, useCase } = body;
     if (!topic || typeof topic !== 'string') {
       return createErrorResponse("Please provide a topic", 400);
+    }
+    
+    if (!useCase || typeof useCase !== 'string') {
+      return createErrorResponse("Please provide a use case", 400);
     }
     
     const keyError = await validateAPIKey();
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
       return createErrorResponse(promptError.error, promptError.status);
     }
     
-    const fullPrompt = `${prompt}\n\n<topic>${topic}</topic>`;
+    const fullPrompt = `${prompt}\n\n<context>\n    <useCase>${useCase}</useCase>\n    <topic>${topic}</topic>\n</context>`;
     
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
     // Reuse the TOPIC_GENERATION model for expansion
