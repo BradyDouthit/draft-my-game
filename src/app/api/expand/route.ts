@@ -9,7 +9,7 @@ interface ExpansionResponse {
   expansions: string[];
 }
 
-// Updated validation function to ensure 'expansions' is a non-empty array of strings and capped at 5 elements
+// Updated validation function to filter invalid expansions and allow up to 10
 function validateExpansionResponse(data: any): data is ExpansionResponse {
   if (!data || typeof data !== 'object') {
     console.error("Response is not an object:", data);
@@ -19,20 +19,30 @@ function validateExpansionResponse(data: any): data is ExpansionResponse {
     console.error("expansions is not an array:", data);
     return false;
   }
-  if (data.expansions.length === 0) {
-    console.error("expansions array is empty");
+
+  // Filter out invalid expansions
+  const validExpansions = data.expansions.filter((exp: unknown) => {
+    const isValid = typeof exp === 'string' && exp.trim().length > 0;
+    if (!isValid) {
+      console.warn("Filtering out invalid expansion:", exp);
+    }
+    return isValid;
+  });
+
+  // Update the data with only valid expansions
+  data.expansions = validExpansions;
+
+  if (validExpansions.length === 0) {
+    console.error("No valid expansions found after filtering");
     return false;
   }
-  if (data.expansions.length > 5) {
-    console.warn("More than 5 expansions returned, truncating to 5.");
-    data.expansions = data.expansions.slice(0, 5);
+
+  // Cap at 10 expansions if more are provided
+  if (validExpansions.length > 10) {
+    console.warn("More than 10 expansions returned, truncating to 10.");
+    data.expansions = validExpansions.slice(0, 10);
   }
-  for (const exp of data.expansions) {
-    if (typeof exp !== 'string' || exp.trim().length === 0) {
-      console.error("One of the expansions is invalid:", exp);
-      return false;
-    }
-  }
+
   return true;
 }
 

@@ -46,10 +46,6 @@ export async function POST(request: Request) {
       return createErrorResponse("Please provide two topics", 400);
     }
 
-    if (topic1.length > 100 || topic2.length > 100) {
-      return createErrorResponse("Topics are too long", 400);
-    }
-
     // Validate API key
     const keyError = await validateAPIKey();
     if (keyError) {
