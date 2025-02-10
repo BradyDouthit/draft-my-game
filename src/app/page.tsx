@@ -54,6 +54,7 @@ export default function Home() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       setUseCase(inputValue);
+      setInputValue('');
     }
   };
 
