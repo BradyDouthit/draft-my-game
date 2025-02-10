@@ -3,6 +3,7 @@ import { Stage, Layer, Rect, Group, Line, Text } from 'react-konva';
 import Topic from './Topic';
 import Expansion from './Expansion';
 import { KonvaEventObject } from 'konva/lib/Node';
+import cytoscape from 'cytoscape';
 
 // Add throttle function
 function throttle<T extends (...args: any[]) => any>(
@@ -280,18 +281,135 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     setCursor('default');
   }, []);
 
+  // Calculate layout positions using Cytoscape
+  const calculateLayout = useCallback((
+    topics: TopicState[],
+    expansions: ExpansionNode[],
+    useCaseCard: UseCaseCard | null
+  ) => {
+    if (!useCaseCard) return { topics, expansions };
+
+    // Create a Cytoscape instance for layout calculation
+    const cy = cytoscape({
+      headless: true,
+      styleEnabled: false
+    });
+
+    // Add use case as root node
+    cy.add({
+      data: { id: 'useCase' },
+      position: { x: useCaseCard.x + useCaseCard.width / 2, y: useCaseCard.y }
+    });
+
+    // Add topic nodes
+    topics.forEach(topic => {
+      cy.add({
+        data: { id: topic.id, parent: 'useCase' }
+      });
+    });
+
+    // Add expansion nodes
+    expansions.forEach(expansion => {
+      cy.add({
+        data: { id: expansion.id, parent: expansion.parentId }
+      });
+    });
+
+    // Add edges
+    topics.forEach(topic => {
+      cy.add({
+        data: { id: `useCase-${topic.id}`, source: 'useCase', target: topic.id }
+      });
+    });
+
+    expansions.forEach(expansion => {
+      cy.add({
+        data: { 
+          id: `${expansion.parentId}-${expansion.id}`, 
+          source: expansion.parentId, 
+          target: expansion.id 
+        }
+      });
+    });
+
+    // Run the layout
+    const layout = cy.layout({
+      name: 'preset',
+      positions: (node: any) => {
+        if (node.id() === 'useCase') {
+          return { x: useCaseCard.x + useCaseCard.width / 2, y: useCaseCard.y };
+        }
+
+        const nodeId = node.id();
+        const isExpansion = expansions.some(e => e.id === nodeId);
+        const parentId = isExpansion ? node.data('parent') : 'useCase';
+        const siblings = isExpansion 
+          ? expansions.filter(e => e.parentId === parentId)
+          : topics;
+        const index = isExpansion 
+          ? expansions.findIndex(e => e.id === nodeId)
+          : topics.findIndex(t => t.id === nodeId);
+        const totalItems = siblings.length;
+
+        const levelWidth = width * 0.8;
+        const levelSpacing = 150;
+        const horizontalSpacing = levelWidth / (totalItems + 1);
+        const startX = (width - levelWidth) / 2 + horizontalSpacing;
+
+        const y = isExpansion 
+          ? useCaseCard.y + (levelSpacing * 2)
+          : useCaseCard.y + levelSpacing;
+        const x = startX + (index * horizontalSpacing);
+
+        return { x, y };
+      },
+      animate: false,
+      fit: false
+    });
+
+    layout.run();
+
+    // Extract new positions
+    const newTopics = topics.map(topic => {
+      const node = cy.$id(topic.id);
+      const position = node.position();
+      return {
+        ...topic,
+        x: position.x,
+        y: position.y
+      };
+    });
+
+    const newExpansions = expansions.map(expansion => {
+      const node = cy.$id(expansion.id);
+      const position = node.position();
+      return {
+        ...expansion,
+        x: position.x,
+        y: position.y
+      };
+    });
+
+    cy.destroy();
+    return { topics: newTopics, expansions: newExpansions };
+  }, []);
+
+  // Update positions when topics, expansions, or use case changes
+  useEffect(() => {
+    const { topics: newTopics, expansions: newExpansions } = calculateLayout(topics, expansions, useCaseCard);
+    setTopics(newTopics);
+    setExpansions(newExpansions);
+  }, [useCaseCard, calculateLayout]);
+
+  // Modify handleTopicClick to use Cytoscape layout
   const handleTopicClick = useCallback(async (topicId: string, topicX: number, topicY: number) => {
-    // Check if topic already has expansions
     const existingExpansions = expansions.filter(e => e.parentId === topicId);
 
     if (existingExpansions.length > 0) {
-      // Remove existing expansions for this topic
-      console.log('Removing expansions for topic:', topicId);
       setExpansions(prev => prev.filter(e => e.parentId !== topicId));
       return;
     }
 
-    // Find the clicked topic to get its text
     const clickedTopic = topics.find(t => t.id === topicId);
     if (!clickedTopic) return;
 
@@ -299,10 +417,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
       const response = await fetch('/api/expand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          topic: clickedTopic.text,
-          useCase
-        })
+        body: JSON.stringify({ topic: clickedTopic.text, useCase })
       });
 
       if (!response.ok) {
@@ -317,23 +432,16 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
         return;
       }
 
-      const radius = 150;
-      const n = expansionsArray.length;
-      // Use a fixed angle delta of 30 degrees (pi/6) if more than one expansion is returned
-      const angleDelta = n > 1 ? Math.PI / 6 : 0;
-      const startAngle = n > 1 ? (Math.PI / 2 - ((n - 1) * angleDelta) / 2) : Math.PI / 2;
+      // Create new expansions with temporary positions
+      const newExpansions = expansionsArray.map((expansion: string, i: number) => ({
+        id: Date.now().toString() + '-' + i,
+        parentId: topicId,
+        x: topicX,
+        y: topicY,
+        text: expansion
+      }));
 
-      const newExpansions = expansionsArray.map((expansion: string, i: number) => {
-        const angle = startAngle + (n > 1 ? i * angleDelta : 0);
-        return {
-          id: Date.now().toString() + '-' + i,
-          parentId: topicId,
-          x: topicX + radius * Math.cos(angle),
-          y: topicY - radius * Math.sin(angle),
-          text: expansion
-        };
-      });
-      console.log('Creating new expansions:', newExpansions);
+      // Add new expansions and let the layout effect handle positioning
       setExpansions(prev => [...prev, ...newExpansions]);
     } catch (error) {
       console.error('Error fetching expansion:', error);
