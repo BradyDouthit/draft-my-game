@@ -14,6 +14,7 @@ export default function Home() {
   const [showTooltip, setShowTooltip] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDocked, setIsDocked] = useState(false);
 
   // Check if tooltip has been dismissed before
   useEffect(() => {
@@ -55,6 +56,14 @@ export default function Home() {
       e.preventDefault();
       setUseCase(inputValue);
       setInputValue('');
+      setIsDocked(true);
+    }
+  };
+
+  const toggleDock = () => {
+    setIsDocked(!isDocked);
+    if (!isDocked) {
+      setInputValue('');
     }
   };
 
@@ -69,7 +78,15 @@ export default function Home() {
       />
 
       {/* Command Palette */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
+      <div 
+        className={`
+          fixed transition-all duration-300 ease-in-out
+          ${(!isLoading && isDocked)
+            ? 'top-4 left-4 transform-none' 
+            : 'top-8 left-1/2 -translate-x-1/2'
+          }
+        `}
+      >
         <div className="relative">
           {/* Loading gradient border container */}
           <div className={`
@@ -87,28 +104,68 @@ export default function Home() {
             `} />
           </div>
 
-          <textarea
-            rows={4}
-            cols={50}
-            className={`
-              relative w-96 px-4 py-2 text-lg rounded-lg
-              ${isDarkMode 
-                ? 'bg-[#1a1a1a] text-white placeholder-gray-400' 
-                : 'bg-white text-gray-900 placeholder-gray-500'
-              }
-              shadow-lg
-              border border-black/10
-              focus:outline-none
-              resize-none
-              transition-all duration-300
-              ${isLoading ? 'border-transparent opacity-50' : ''}
-            `}
-            placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
+          {/* Input Container */}
+          <div className={`
+            relative transition-all duration-300
+            ${(!isLoading && isDocked) ? 'w-12 h-12' : 'w-96'}
+          `}>
+            {/* Search Icon - Only visible when docked and not loading */}
+            {(!isLoading && isDocked) && (
+              <button
+                onClick={toggleDock}
+                className={`
+                  absolute inset-0 flex items-center justify-center
+                  rounded-lg shadow-lg
+                  ${isDarkMode 
+                    ? 'bg-[#1a1a1a] text-white hover:bg-[#2a2a2a]' 
+                    : 'bg-white text-gray-900 hover:bg-gray-50'
+                  }
+                  transition-colors duration-200
+                  border border-black/10
+                `}
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-6 w-6" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Textarea - Hidden when docked and not loading */}
+            <textarea
+              rows={4}
+              cols={50}
+              className={`
+                relative px-4 py-2 text-lg rounded-lg
+                ${isDarkMode 
+                  ? 'bg-[#1a1a1a] text-white placeholder-gray-400' 
+                  : 'bg-white text-gray-900 placeholder-gray-500'
+                }
+                shadow-lg
+                border border-black/10
+                focus:outline-none
+                resize-none
+                transition-all duration-300
+                ${isLoading ? 'border-transparent opacity-50' : ''}
+                ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : 'w-full'}
+              `}
+              placeholder={'What are you trying to make? Example: "Designing a life simulation and farming game emphasizing community building, resource management, and exploration'}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+            />
+          </div>
 
           {/* Tooltip */}
           <div 
