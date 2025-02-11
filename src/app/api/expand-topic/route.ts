@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
     
     const { prompt, error: promptError } = await readSystemPrompt(
-      path.join(process.cwd(), "src", "app", "api", "expand", "systemPrompt.txt")
+      path.join(process.cwd(), "src", "app", "api", "expand-topic", "systemPrompt.txt")
     );
     if (promptError) {
       return createErrorResponse(promptError.error, promptError.status);

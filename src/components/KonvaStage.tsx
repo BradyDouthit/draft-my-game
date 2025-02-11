@@ -296,7 +296,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     if (!clickedTopic) return;
 
     try {
-      const response = await fetch('/api/expand', {
+      const response = await fetch('/api/expand-topic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
