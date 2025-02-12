@@ -78,13 +78,13 @@ export function DraggableNode({
 
   // Prepare overlay buttons
   const overlayButtons = [
-    ...(onEdit ? [{
-      icon: 'edit' as const,
-      onClick: () => setIsEditing(true)
-    }] : []),
     ...(onPlus ? [{
       icon: 'plus' as const,
       onClick: onPlus
+    }] : []),
+    ...(onEdit ? [{
+      icon: 'edit' as const,
+      onClick: () => setIsEditing(true)
     }] : []),
     ...(onDelete ? [{
       icon: 'delete' as const,

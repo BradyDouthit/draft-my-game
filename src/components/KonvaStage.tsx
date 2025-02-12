@@ -260,6 +260,14 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     );
   }, [topics, useCase]);
 
+  const handleTopicEdit = useCallback((topicId: string, newText: string) => {
+    setTopics(prev =>
+      prev.map(t =>
+        t.id === topicId ? { ...t, text: newText } : t
+      )
+    );
+  }, []);
+
   const handleStageDragEnd = useCallback((e: KonvaEventObject<DragEvent>) => {
     if (!isDraggingTopic) {
       setThrottledStagePos({
@@ -383,6 +391,14 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     setExpansions(prev => prev.filter(e => e.id !== expansionId));
   }, []);
 
+  const handleExpansionEdit = useCallback((expansionId: string, newText: string) => {
+    setExpansions(prev =>
+      prev.map(e =>
+        e.id === expansionId ? { ...e, text: newText } : e
+      )
+    );
+  }, []);
+
   // Render function for the use case card
   const renderUseCase = useMemo(() => {
     if (!useCaseCard) return null;
@@ -494,6 +510,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
               onDragStart={() => handleDragStart(topic.id)}
               onDragMove={(e) => handleDragMove(topic.id, e)}
               onDragEnd={(e) => handleDragEnd(topic.id, e)}
+              onEdit={(newText) => handleTopicEdit(topic.id, newText)}
               onClick={() => handleTopicClick(topic.id, topic.x, topic.y)}
               onDelete={() => handleTopicDelete(topic.id)}
             />
@@ -508,6 +525,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
               onDragMove={(e) => handleExpansionDragMove(expansion.id, e)}
               onDragEnd={(e) => handleExpansionDragEnd(expansion.id, e)}
               onDelete={() => handleExpansionDelete(expansion.id)}
+              onEdit={(newText) => handleExpansionEdit(expansion.id, newText)}
             />
           ))}
         </Layer>
