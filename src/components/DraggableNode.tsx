@@ -123,12 +123,20 @@ export function DraggableNode({
           groupRef.current.clearCache();
         }
         setIsHoveredCanvas(true);
+        const container = groupRef.current?.getStage()?.container();
+        if (container) {
+          container.style.cursor = 'pointer';
+        }
       }}
       onMouseLeave={() => {
         if (groupRef.current) {
           groupRef.current.cache();
         }
         setIsHoveredCanvas(false);
+        const container = groupRef.current?.getStage()?.container();
+        if (container) {
+          container.style.cursor = 'default';
+        }
       }}
       perfectDrawEnabled={false}
     >
