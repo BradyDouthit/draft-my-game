@@ -5,6 +5,7 @@ interface HTMLTextAreaProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onBlur: () => void;
+  onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
   style: React.CSSProperties;
   autoFocus?: boolean;
 }

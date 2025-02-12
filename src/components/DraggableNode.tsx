@@ -159,6 +159,11 @@ export function DraggableNode({
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditValue(e.target.value)}
           onKeyDown={handleEditKeyDown}
           onBlur={handleEditComplete}
+          onFocus={(e: React.FocusEvent<HTMLTextAreaElement>) => {
+            const textarea = e.target;
+            const length = textarea.value.length;
+            textarea.setSelectionRange(length, length);
+          }}
           style={{
             position: 'absolute',
             top: -height / 2 + padding,
