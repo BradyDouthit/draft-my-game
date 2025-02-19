@@ -66,6 +66,8 @@ interface ExpansionNode {
   x: number;
   y: number;
   text: string;
+  width?: number;
+  height?: number;
 }
 
 export default function KonvaStage({ 
@@ -226,38 +228,70 @@ export default function KonvaStage({
     const newX = e.target.x();
     const newY = e.target.y();
 
-    // Update topic position and dimensions in real-time
-    setTopics(prev => 
-      prev.map(t =>
-        t.id === topicId 
-          ? { 
-              ...t, 
-              x: newX, 
-              y: newY,
-              width: dimensions?.width,
-              height: dimensions?.height
-            } 
-          : t
-      )
-    );
+    // Check if the dragged item is an expansion
+    const isDraggingExpansion = expansions.some(exp => exp.id === topicId);
+    
+    if (isDraggingExpansion) {
+      // Update expansion position and dimensions
+      setExpansions(prev => 
+        prev.map(exp =>
+          exp.id === topicId 
+            ? { 
+                ...exp, 
+                x: newX, 
+                y: newY,
+                width: dimensions?.width,
+                height: dimensions?.height
+              }
+            : exp
+        )
+      );
+    } else {
+      // Update topic position and dimensions
+      setTopics(prev => 
+        prev.map(t =>
+          t.id === topicId 
+            ? { 
+                ...t, 
+                x: newX, 
+                y: newY,
+                width: dimensions?.width,
+                height: dimensions?.height
+              } 
+            : t
+        )
+      );
+    }
 
-    // Check for potential combine target
-    const draggedTopic = topics.find(t => t.id === topicId);
-    if (!draggedTopic) return;
+    // Check for potential combine targets among both topics and expansions
+    const draggedItem = isDraggingExpansion 
+      ? expansions.find(exp => exp.id === topicId)
+      : topics.find(t => t.id === topicId);
+    
+    if (!draggedItem) return;
 
+    // Find nearby items (both topics and expansions)
     const nearbyTopic = topics.find(t => 
       t.id !== topicId && 
       Math.hypot(t.x - newX, t.y - newY) < COMBINE_DISTANCE
     );
 
+    const nearbyExpansion = expansions.find(exp => 
+      exp.id !== topicId && 
+      Math.hypot(exp.x - newX, exp.y - newY) < COMBINE_DISTANCE
+    );
+
     if (nearbyTopic) {
       setCombineTarget({ sourceId: topicId, targetId: nearbyTopic.id });
+      setCursor('copy');
+    } else if (nearbyExpansion) {
+      setCombineTarget({ sourceId: topicId, targetId: nearbyExpansion.id });
       setCursor('copy');
     } else {
       setCombineTarget(null);
       setCursor('grabbing');
     }
-  }, [topics]);
+  }, [topics, expansions]);
 
   const handleDragEnd = useCallback(async (
     topicId: string, 
@@ -268,19 +302,31 @@ export default function KonvaStage({
     setCursor('grab');
     setCombineTarget(null);
     
-    const draggedTopic = topics.find(t => t.id === topicId);
-    if (!draggedTopic) return;
+    const isDraggingExpansion = expansions.some(exp => exp.id === topicId);
+    const draggedItem = isDraggingExpansion 
+      ? expansions.find(exp => exp.id === topicId)
+      : topics.find(t => t.id === topicId);
+    
+    if (!draggedItem) return;
 
     const newX = e.target.x();
     const newY = e.target.y();
 
-    // Check for collision with other topics
+    // Check for collision with other items (both topics and expansions)
     const otherTopic = topics.find(t => 
       t.id !== topicId && 
       Math.hypot(t.x - newX, t.y - newY) < COMBINE_DISTANCE
     );
 
-    if (otherTopic) {
+    const otherExpansion = expansions.find(exp => 
+      exp.id !== topicId && 
+      Math.hypot(exp.x - newX, exp.y - newY) < COMBINE_DISTANCE
+    );
+
+    if (otherTopic || otherExpansion) {
+      const otherItem = otherTopic || otherExpansion;
+      if (!otherItem) return;
+      
       try {
         const response = await fetch('/api/combine-topics', {
           method: 'POST',
@@ -288,8 +334,8 @@ export default function KonvaStage({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            topic1: draggedTopic.text,
-            topic2: otherTopic.text,
+            topic1: draggedItem.text,
+            topic2: otherItem.text,
             useCase
           }),
         });
@@ -298,50 +344,36 @@ export default function KonvaStage({
         
         if (result.combinedTopic) {
           // When creating a new combined topic:
-          // 1. Use the larger of the two topics' dimensions if available
-          // 2. Otherwise, let the Topic component calculate dimensions on mount
-          const newWidth = Math.max(
-            draggedTopic.width || 0,
-            otherTopic.width || 0,
-            400 // default width
-          );
-          const newHeight = Math.max(
-            draggedTopic.height || 0,
-            otherTopic.height || 0,
-            80 // default height
-          );
+          if (isDraggingExpansion) {
+            // Remove the dragged expansion
+            setExpansions(prev => prev.filter(exp => exp.id !== topicId));
+          } else {
+            // Remove the dragged topic
+            setTopics(prev => prev.filter(t => t.id !== topicId));
+          }
 
-          setTopics((prev: TopicState[]) => [
-            ...prev.filter(t => t.id !== topicId && t.id !== otherTopic.id),
-            {
-              id: Date.now().toString(),
-              x: (newX + otherTopic.x) / 2,
-              y: (newY + otherTopic.y) / 2,
-              text: result.combinedTopic,
-              width: newWidth > 0 ? newWidth : undefined,
-              height: newHeight > 0 ? newHeight : undefined,
-            },
-          ]);
-          return;
+          // Remove the target item
+          if (otherExpansion) {
+            setExpansions(prev => prev.filter(exp => exp.id !== otherExpansion.id));
+          } else if (otherTopic) {
+            setTopics(prev => prev.filter(t => t.id !== otherTopic.id));
+          }
+
+          // Add the new combined topic
+          const newTopic = {
+            id: Date.now().toString(),
+            x: newX,
+            y: newY,
+            text: result.combinedTopic,
+          };
+
+          setTopics(prev => [...prev, newTopic]);
         }
       } catch (error) {
         console.error('Error combining topics:', error);
       }
     }
-
-    // If no combination occurred, just update the position and dimensions
-    setTopics(prev =>
-      prev.map(t =>
-        t.id === topicId ? { 
-          ...t, 
-          x: newX, 
-          y: newY,
-          width: dimensions?.width,
-          height: dimensions?.height
-        } : t
-      )
-    );
-  }, [topics, useCase]);
+  }, [topics, expansions, useCase]);
 
   const handleStageDragEnd = useCallback((e: KonvaEventObject<DragEvent>) => {
     if (!isDraggingTopic) {
@@ -413,7 +445,9 @@ export default function KonvaStage({
           parentId: topicId,
           x: topicX + radius * Math.cos(angle),
           y: topicY - radius * Math.sin(angle),
-          text: expansion
+          text: expansion,
+          width: 340, // Set initial width
+          height: 80  // Set initial height (will be updated by onDimensionsChange)
         };
       });
       console.log('Creating new expansions:', newExpansions);
@@ -423,38 +457,31 @@ export default function KonvaStage({
     }
   }, [expansions, topics, useCase]);
 
+  // Add handler for expansion dimension updates
+  const handleExpansionDimensionsChange = useCallback((expansionId: string, dimensions: TopicDimensions) => {
+    setExpansions(prev => 
+      prev.map(exp =>
+        exp.id === expansionId 
+          ? { ...exp, width: dimensions.width, height: dimensions.height }
+          : exp
+      )
+    );
+  }, []);
+
   const handleExpansionDragStart = () => {
     setIsDraggingTopic(true);
     setCursor('grabbing');
   };
 
-  const handleExpansionDragEnd = (id: string, e: KonvaEventObject<DragEvent>) => {
-    setIsDraggingTopic(false);
-    setCursor('grab');
-
-    const newX = e.target.x();
-    const newY = e.target.y();
-
-    setExpansions(prev =>
-      prev.map(exp =>
-        exp.id === id
-          ? { ...exp, x: newX, y: newY }
-          : exp
-      )
-    );
+  const handleExpansionDragEnd = (id: string, e: KonvaEventObject<DragEvent>, dimensions?: TopicDimensions) => {
+    // Use the main handleDragEnd function for consistent behavior
+    handleDragEnd(id, e, dimensions);
   };
 
-  const handleExpansionDragMove = useCallback((id: string, e: KonvaEventObject<DragEvent>) => {
-    const newX = e.target.x();
-    const newY = e.target.y();
-
-    // Update expansion position in real-time
-    setExpansions(prev =>
-      prev.map(exp =>
-        exp.id === id ? { ...exp, x: newX, y: newY } : exp
-      )
-    );
-  }, []);
+  const handleExpansionDragMove = useCallback((id: string, e: KonvaEventObject<DragEvent>, dimensions?: TopicDimensions) => {
+    // Use the main handleDragMove function for consistent behavior
+    handleDragMove(id, e, dimensions);
+  }, [handleDragMove]);
 
   const handleTopicDelete = useCallback((topicId: string) => {
     // Remove the topic and its associated expansions
@@ -564,35 +591,82 @@ export default function KonvaStage({
             />
           );
         })}
+
+        {/* Lines from expansions to their parent topics */}
+        {expansions.map(expansion => {
+          const parentTopic = topics.find(t => t.id === expansion.parentId);
+          if (!parentTopic) return null;
+
+          return (
+            <Line
+              key={`expansion-line-${expansion.id}-${parentTopic.id}`}
+              points={[
+                parentTopic.x,
+                parentTopic.y,
+                expansion.x,
+                expansion.y
+              ]}
+              stroke="#666"
+              strokeWidth={1}
+              opacity={0.3}
+              dash={[3, 3]}
+            />
+          );
+        })}
       </>
     );
-  }, [topics, useCaseCard]);
+  }, [topics, useCaseCard, expansions]);
 
   // Render combine indicator
   const renderCombineIndicator = useMemo(() => {
     if (!combineTarget) return null;
 
-    const sourceTopic = topics.find(t => t.id === combineTarget.sourceId);
-    const targetTopic = topics.find(t => t.id === combineTarget.targetId);
+    // Look for source in both topics and expansions
+    const sourceTopic = topics.find(t => t.id === combineTarget.sourceId) || 
+                       expansions.find(e => e.id === combineTarget.sourceId);
+    
+    // Look for target in both topics and expansions
+    const targetTopic = topics.find(t => t.id === combineTarget.targetId) ||
+                       expansions.find(e => e.id === combineTarget.targetId);
+
     if (!sourceTopic || !targetTopic) return null;
+
+    // Helper function to get node dimensions
+    const getNodeDimensions = (node: TopicState | ExpansionNode) => {
+      // For expansions, use actual dimensions or fixed defaults
+      if ('parentId' in node) {
+        return {
+          width: node.width || 340, // 300 (text width) + 40 (padding)
+          height: node.height || 80
+        };
+      }
+      // For topics, use their dimensions or defaults
+      return {
+        width: node.width || 400,
+        height: node.height || 80
+      };
+    };
+
+    const sourceDimensions = getNodeDimensions(sourceTopic);
+    const targetDimensions = getNodeDimensions(targetTopic);
 
     return (
       <CombineIndicator
         sourceTopic={{
           x: sourceTopic.x,
           y: sourceTopic.y,
-          width: sourceTopic.width || 400,
-          height: sourceTopic.height || 80
+          width: sourceDimensions.width,
+          height: sourceDimensions.height
         }}
         targetTopic={{
           x: targetTopic.x,
           y: targetTopic.y,
-          width: targetTopic.width || 400,
-          height: targetTopic.height || 80
+          width: targetDimensions.width,
+          height: targetDimensions.height
         }}
       />
     );
-  }, [combineTarget, topics]);
+  }, [combineTarget, topics, expansions]);
 
   return (
     <div style={{ cursor, background: '#1a1a1a' }}>
@@ -635,10 +709,11 @@ export default function KonvaStage({
               y={expansion.y}
               text={expansion.text}
               onDragStart={() => handleExpansionDragStart()}
-              onDragMove={(e) => handleExpansionDragMove(expansion.id, e)}
-              onDragEnd={(e) => handleExpansionDragEnd(expansion.id, e)}
+              onDragMove={(e, dimensions) => handleExpansionDragMove(expansion.id, e, dimensions)}
+              onDragEnd={(e, dimensions) => handleExpansionDragEnd(expansion.id, e, dimensions)}
               onDelete={() => handleExpansionDelete(expansion.id)}
               onEdit={(newText) => handleExpansionEdit(expansion.id, newText)}
+              onDimensionsChange={(dimensions) => handleExpansionDimensionsChange(expansion.id, dimensions)}
             />
           ))}
         </Layer>

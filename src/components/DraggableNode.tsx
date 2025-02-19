@@ -121,12 +121,20 @@ export function DraggableNode({
       onMouseEnter={() => {
         if (groupRef.current) {
           groupRef.current.clearCache();
+          const stage = groupRef.current.getStage();
+          if (stage) {
+            stage.container().style.cursor = 'grab';
+          }
         }
         setIsHoveredCanvas(true);
       }}
       onMouseLeave={() => {
         if (groupRef.current) {
           groupRef.current.cache();
+          const stage = groupRef.current.getStage();
+          if (stage) {
+            stage.container().style.cursor = 'default';
+          }
         }
         setIsHoveredCanvas(false);
       }}

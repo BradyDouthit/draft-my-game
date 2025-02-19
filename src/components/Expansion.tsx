@@ -8,10 +8,11 @@ interface ExpansionProps {
   y: number;
   text: string;
   onDragStart: () => void;
-  onDragMove: (e: KonvaEventObject<DragEvent>) => void;
-  onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
+  onDragMove: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
+  onDragEnd: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
+  onDimensionsChange?: (dimensions: { width: number; height: number }) => void;
 }
 
 export default function Expansion({ 
@@ -22,7 +23,8 @@ export default function Expansion({
   onDragMove, 
   onDragEnd,
   onDelete,
-  onEdit
+  onEdit,
+  onDimensionsChange
 }: ExpansionProps) {
   const textRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -39,12 +41,19 @@ export default function Expansion({
       // Let the height adjust automatically based on content
       const textHeight = textRef.current.getHeight();
       
-      setDimensions({
+      const newDimensions = {
         width: maxWidth + (padding * 2),
         height: textHeight + (padding * 2)
-      });
+      };
+      
+      setDimensions(newDimensions);
+      
+      // Notify parent of dimension changes
+      if (onDimensionsChange) {
+        onDimensionsChange(newDimensions);
+      }
     }
-  }, [text, padding]);
+  }, [text, padding, onDimensionsChange]);
 
   const renderContent = (isEditing: boolean) => {
     if (isEditing) return null;
@@ -75,8 +84,8 @@ export default function Expansion({
       width={dimensions.width}
       height={dimensions.height}
       onDragStart={onDragStart}
-      onDragMove={onDragMove}
-      onDragEnd={onDragEnd}
+      onDragMove={(e) => onDragMove(e, dimensions)}
+      onDragEnd={(e) => onDragEnd(e, dimensions)}
       onEdit={onEdit}
       onDelete={onDelete}
       renderContent={renderContent}
