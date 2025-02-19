@@ -395,6 +395,18 @@ export default function KonvaStage({
     setExpansions(prev => prev.filter(e => e.id !== expansionId));
   }, []);
 
+  const handleTopicEdit = useCallback((topicId: string, newText: string) => {
+    setTopics(prev => prev.map(t => 
+      t.id === topicId ? { ...t, text: newText } : t
+    ));
+  }, []);
+
+  const handleExpansionEdit = useCallback((expansionId: string, newText: string) => {
+    setExpansions(prev => prev.map(e => 
+      e.id === expansionId ? { ...e, text: newText } : e
+    ));
+  }, []);
+
   // Render function for the use case card
   const renderUseCase = useMemo(() => {
     if (!useCaseCard) return null;
@@ -515,6 +527,7 @@ export default function KonvaStage({
               onDragEnd={(e) => handleDragEnd(topic.id, e)}
               onClick={() => handleTopicClick(topic.id, topic.x, topic.y)}
               onDelete={() => handleTopicDelete(topic.id)}
+              onEdit={(newText) => handleTopicEdit(topic.id, newText)}
             />
           ))}
           {expansions.map((expansion) => (
@@ -527,6 +540,7 @@ export default function KonvaStage({
               onDragMove={(e) => handleExpansionDragMove(expansion.id, e)}
               onDragEnd={(e) => handleExpansionDragEnd(expansion.id, e)}
               onDelete={() => handleExpansionDelete(expansion.id)}
+              onEdit={(newText) => handleExpansionEdit(expansion.id, newText)}
             />
           ))}
         </Layer>
