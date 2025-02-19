@@ -24,6 +24,10 @@ interface KonvaStageProps {
   height: number;
   useCase: string;
   onLoadingChange?: (isLoading: boolean) => void;
+  topics: TopicState[];
+  setTopics: React.Dispatch<React.SetStateAction<TopicState[]>>;
+  stagePos: StagePosition;
+  setStagePos: React.Dispatch<React.SetStateAction<StagePosition>>;
 }
 
 interface TopicState {
@@ -31,6 +35,7 @@ interface TopicState {
   x: number;
   y: number;
   text: string;
+  parentId?: string;
 }
 
 interface UseCaseCard {
@@ -55,10 +60,17 @@ interface ExpansionNode {
   text: string;
 }
 
-export default function KonvaStage({ width, height, useCase, onLoadingChange }: KonvaStageProps) {
-  const [topics, setTopics] = useState<TopicState[]>([]);
+export default function KonvaStage({ 
+  width, 
+  height, 
+  useCase, 
+  onLoadingChange,
+  topics,
+  setTopics,
+  stagePos,
+  setStagePos
+}: KonvaStageProps) {
   const [expansions, setExpansions] = useState<ExpansionNode[]>([]);
-  const [stagePos, setStagePos] = useState<StagePosition>({ x: 0, y: 0, scale: 1 });
   const [isDraggingTopic, setIsDraggingTopic] = useState(false);
   const [cursor, setCursor] = useState<string>('default');
   const [useCaseCard, setUseCaseCard] = useState<UseCaseCard | null>(null);
@@ -176,7 +188,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     const startX = (width - gridWidth) / 2;
     const startY = (height - verticalGap * 3) / 2;
 
-    setTopics(prev => prev.map((topic, i) => {
+    setTopics((prev: TopicState[]) => prev.map((topic: TopicState, i: number) => {
       const row = Math.floor(i / columns);
       const col = i % columns;
       return {
@@ -197,7 +209,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     const newY = e.target.y();
 
     // Update topic position in real-time
-    setTopics(prev =>
+    setTopics(prev => 
       prev.map(t =>
         t.id === topicId ? { ...t, x: newX, y: newY } : t
       )
@@ -236,7 +248,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
         const result = await response.json();
         
         if (result.combinedTopic) {
-          setTopics(prev => [
+          setTopics((prev: TopicState[]) => [
             ...prev.filter(t => t.id !== topicId && t.id !== otherTopic.id),
             {
               id: Date.now().toString(),
@@ -418,53 +430,60 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
     );
   }, [useCaseCard]);
 
-  // Render connecting lines between use case and topics
-  const renderConnectingLines = useMemo(() => {
-    if (!useCaseCard || !topics.length) return null;
+  // Render lines connecting topics to their parents or use case
+  const renderLines = useMemo(() => {
+    if (!topics.length) return null;
 
     return (
       <>
-        {/* Use case to topic connections */}
-        {topics.map((topic) => (
-          <Line
-            key={`usecase-line-${topic.id}`}
-            points={[
-              useCaseCard.x + useCaseCard.width / 2,
-              useCaseCard.y + useCaseCard.height,
-              topic.x,
-              topic.y
-            ]}
-            stroke="#4A90E2"
-            strokeWidth={1}
-            opacity={0.3}
-            dash={[5, 5]}
-          />
-        ))}
-        
-        {/* Topic to expansion connections */}
-        {expansions.map((expansion) => {
-          const parentTopic = topics.find(t => t.id === expansion.parentId);
-          if (!parentTopic) return null;
+        {/* Lines from topics to use case card */}
+        {useCaseCard && topics.map(topic => {
+          // If topic has no parentId, it's connected to the use case
+          if (!topic.parentId) {
+            return (
+              <Line
+                key={`usecase-line-${topic.id}`}
+                points={[
+                  useCaseCard.x + useCaseCard.width / 2,
+                  useCaseCard.y + useCaseCard.height,
+                  topic.x,
+                  topic.y
+                ]}
+                stroke="#4A90E2"
+                strokeWidth={1}
+                opacity={0.3}
+                dash={[5, 5]}
+              />
+            );
+          }
+          return null;
+        })}
+
+        {/* Lines between topics */}
+        {topics.map(topic => {
+          if (!topic.parentId) return null;
           
+          const parentTopic = topics.find(t => t.id === topic.parentId);
+          if (!parentTopic) return null;
+
           return (
             <Line
-              key={`expansion-line-${expansion.id}`}
+              key={`topic-line-${topic.id}-${parentTopic.id}`}
               points={[
                 parentTopic.x,
                 parentTopic.y,
-                expansion.x,
-                expansion.y
+                topic.x,
+                topic.y
               ]}
-              stroke="#3a3a3a"
-              strokeWidth={2}
+              stroke="#999"
+              strokeWidth={1}
               opacity={0.5}
-              perfectDrawEnabled={false}
             />
           );
         })}
       </>
     );
-  }, [useCaseCard, topics, expansions]);
+  }, [topics, useCaseCard]);
 
   return (
     <div style={{ cursor, background: '#1a1a1a' }}>
@@ -483,7 +502,7 @@ export default function KonvaStage({ width, height, useCase, onLoadingChange }: 
         perfectDrawEnabled={false}
       >
         <Layer>
-          {renderConnectingLines}
+          {renderLines}
           {renderUseCase}
           {topics.map((topic) => (
             <Topic

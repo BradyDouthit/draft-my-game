@@ -3,6 +3,15 @@
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import CommandPalette from '@/components/CommandPalette';
+import Toolbar from '@/components/Toolbar/Toolbar';
+
+interface Topic {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  parentId?: string;
+}
 
 const KonvaStage = dynamic(() => import('../components/KonvaStage'), {
   ssr: false,
@@ -13,6 +22,8 @@ export default function Home() {
   const [useCase, setUseCase] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0, scale: 1 });
 
   // Check system theme preference
   useEffect(() => {
@@ -42,6 +53,22 @@ export default function Home() {
     setUseCase(value);
   };
 
+  const handleCreateTopic = (text: string) => {
+    // Calculate the center of the viewport in stage coordinates
+    const viewportCenterX = (-stagePos.x + stageSize.width / 2) / stagePos.scale;
+    const viewportCenterY = (-stagePos.y + stageSize.height / 2) / stagePos.scale;
+
+    const newTopic: Topic = {
+      id: Date.now().toString(),
+      text,
+      x: viewportCenterX,
+      y: viewportCenterY,
+      parentId: useCase ? undefined : topics[0]?.id
+    };
+    
+    setTopics(prev => [...prev, newTopic]);
+  };
+
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       {/* Canvas */}
@@ -50,6 +77,10 @@ export default function Home() {
         height={stageSize.height} 
         useCase={useCase}
         onLoadingChange={setIsLoading}
+        topics={topics}
+        setTopics={setTopics}
+        stagePos={stagePos}
+        setStagePos={setStagePos}
       />
 
       <CommandPalette
@@ -57,6 +88,10 @@ export default function Home() {
         isDarkMode={isDarkMode}
         onSubmit={handleSubmit}
       />
+
+      {useCase !== '' && topics.length > 0 && (
+        <Toolbar onCreateTopic={handleCreateTopic} />
+      )}
     </main>
   );
 }
