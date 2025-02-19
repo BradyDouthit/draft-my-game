@@ -95,8 +95,8 @@ export default function Topic({
       width={dimensions.width}
       height={dimensions.height}
       onDragStart={onDragStart}
-      onDragMove={(e) => onDragMove(e, dimensions)}
-      onDragEnd={(e) => onDragEnd(e, dimensions)}
+      onDragMove={onDragMove}
+      onDragEnd={onDragEnd}
       onEdit={onEdit}
       onDelete={onDelete}
       onPlus={onClick}

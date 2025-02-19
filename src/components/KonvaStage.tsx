@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Stage, Layer, Rect, Group, Line, Text, Circle } from 'react-konva';
+import { Stage, Layer, Rect, Group, Line, Text } from 'react-konva';
 import Topic from './Topic';
 import Expansion from './Expansion';
 import { KonvaEventObject } from 'konva/lib/Node';
+import { CombineIndicator } from './CombineIndicator';
 
 // Add throttle function
 function throttle<T extends (...args: any[]) => any>(
@@ -38,6 +39,11 @@ interface TopicState {
   parentId?: string;
   width?: number;
   height?: number;
+}
+
+interface TopicDimensions {
+  width: number;
+  height: number;
 }
 
 interface UseCaseCard {
@@ -212,7 +218,11 @@ export default function KonvaStage({
     setCursor('grabbing');
   }, []);
 
-  const handleDragMove = useCallback((topicId: string, e: KonvaEventObject<DragEvent>, dimensions?: { width: number; height: number }) => {
+  const handleDragMove = useCallback((
+    topicId: string, 
+    e: KonvaEventObject<DragEvent>,
+    dimensions?: TopicDimensions
+  ) => {
     const newX = e.target.x();
     const newY = e.target.y();
 
@@ -249,7 +259,11 @@ export default function KonvaStage({
     }
   }, [topics]);
 
-  const handleDragEnd = useCallback(async (topicId: string, e: KonvaEventObject<DragEvent>, dimensions?: { width: number; height: number }) => {
+  const handleDragEnd = useCallback(async (
+    topicId: string, 
+    e: KonvaEventObject<DragEvent>,
+    dimensions?: TopicDimensions
+  ) => {
     setIsDraggingTopic(false);
     setCursor('grab');
     setCombineTarget(null);
@@ -283,8 +297,20 @@ export default function KonvaStage({
         const result = await response.json();
         
         if (result.combinedTopic) {
-          // Create the new topic but don't set dimensions yet
-          // They will be set once the Topic component mounts and measures the text
+          // When creating a new combined topic:
+          // 1. Use the larger of the two topics' dimensions if available
+          // 2. Otherwise, let the Topic component calculate dimensions on mount
+          const newWidth = Math.max(
+            draggedTopic.width || 0,
+            otherTopic.width || 0,
+            400 // default width
+          );
+          const newHeight = Math.max(
+            draggedTopic.height || 0,
+            otherTopic.height || 0,
+            80 // default height
+          );
+
           setTopics((prev: TopicState[]) => [
             ...prev.filter(t => t.id !== topicId && t.id !== otherTopic.id),
             {
@@ -292,6 +318,8 @@ export default function KonvaStage({
               x: (newX + otherTopic.x) / 2,
               y: (newY + otherTopic.y) / 2,
               text: result.combinedTopic,
+              width: newWidth > 0 ? newWidth : undefined,
+              height: newHeight > 0 ? newHeight : undefined,
             },
           ]);
           return;
@@ -540,7 +568,7 @@ export default function KonvaStage({
     );
   }, [topics, useCaseCard]);
 
-  // Render lines connecting topics to their parents or use case
+  // Render combine indicator
   const renderCombineIndicator = useMemo(() => {
     if (!combineTarget) return null;
 
@@ -548,103 +576,21 @@ export default function KonvaStage({
     const targetTopic = topics.find(t => t.id === combineTarget.targetId);
     if (!sourceTopic || !targetTopic) return null;
 
-    // Calculate midpoint for the merge indicator
-    const midX = (sourceTopic.x + targetTopic.x) / 2;
-    const midY = (sourceTopic.y + targetTopic.y) / 2;
-
-    // Use stored dimensions or fallback to defaults
-    const sourceWidth = sourceTopic.width || 400;
-    const sourceHeight = sourceTopic.height || 80;
-    const targetWidth = targetTopic.width || 400;
-    const targetHeight = targetTopic.height || 80;
-
     return (
-      <>
-        {/* Glow effect around both topics */}
-        <Rect
-          x={targetTopic.x}
-          y={targetTopic.y}
-          width={targetWidth}
-          height={targetHeight}
-          cornerRadius={8}
-          fill="transparent"
-          stroke="#4A90E2"
-          strokeWidth={3}
-          opacity={0.8}
-          perfectDrawEnabled={false}
-          offsetX={targetWidth / 2}
-          offsetY={targetHeight / 2}
-          shadowColor="#4A90E2"
-          shadowBlur={15}
-          shadowOpacity={0.5}
-        />
-        <Rect
-          x={sourceTopic.x}
-          y={sourceTopic.y}
-          width={sourceWidth}
-          height={sourceHeight}
-          cornerRadius={8}
-          fill="transparent"
-          stroke="#4A90E2"
-          strokeWidth={3}
-          opacity={0.8}
-          perfectDrawEnabled={false}
-          offsetX={sourceWidth / 2}
-          offsetY={sourceHeight / 2}
-          shadowColor="#4A90E2"
-          shadowBlur={15}
-          shadowOpacity={0.5}
-        />
-
-        {/* Connection line with gradient */}
-        <Line
-          points={[
-            sourceTopic.x,
-            sourceTopic.y,
-            targetTopic.x,
-            targetTopic.y
-          ]}
-          stroke="#4A90E2"
-          strokeWidth={3}
-          opacity={0.8}
-          dash={[10, 5]}
-        />
-
-        {/* Merge indicator circle in the middle */}
-        <Group x={midX} y={midY}>
-          {/* Background circle */}
-          <Circle
-            radius={20}
-            fill="#4A90E2"
-            opacity={0.9}
-            perfectDrawEnabled={false}
-          />
-          {/* Plus symbol */}
-          <Line
-            points={[-8, 0, 8, 0]}
-            stroke="white"
-            strokeWidth={3}
-            perfectDrawEnabled={false}
-          />
-          <Line
-            points={[0, -8, 0, 8]}
-            stroke="white"
-            strokeWidth={3}
-            perfectDrawEnabled={false}
-          />
-        </Group>
-
-        {/* Pulsing animation on target */}
-        <Circle
-          x={targetTopic.x}
-          y={targetTopic.y}
-          radius={Math.max(targetWidth, targetHeight) / 4}
-          stroke="#4A90E2"
-          strokeWidth={2}
-          opacity={0.5}
-          perfectDrawEnabled={false}
-        />
-      </>
+      <CombineIndicator
+        sourceTopic={{
+          x: sourceTopic.x,
+          y: sourceTopic.y,
+          width: sourceTopic.width || 400,
+          height: sourceTopic.height || 80
+        }}
+        targetTopic={{
+          x: targetTopic.x,
+          y: targetTopic.y,
+          width: targetTopic.width || 400,
+          height: targetTopic.height || 80
+        }}
+      />
     );
   }, [combineTarget, topics]);
 
