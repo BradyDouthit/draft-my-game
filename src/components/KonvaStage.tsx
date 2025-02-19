@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Stage, Layer, Rect, Group, Line, Text } from 'react-konva';
+import { Stage, Layer, Rect, Group, Line, Text, Circle } from 'react-konva';
 import Topic from './Topic';
 import Expansion from './Expansion';
 import { KonvaEventObject } from 'konva/lib/Node';
@@ -36,6 +36,8 @@ interface TopicState {
   y: number;
   text: string;
   parentId?: string;
+  width?: number;
+  height?: number;
 }
 
 interface UseCaseCard {
@@ -74,6 +76,12 @@ export default function KonvaStage({
   const [isDraggingTopic, setIsDraggingTopic] = useState(false);
   const [cursor, setCursor] = useState<string>('default');
   const [useCaseCard, setUseCaseCard] = useState<UseCaseCard | null>(null);
+  const [combineTarget, setCombineTarget] = useState<{
+    sourceId: string;
+    targetId: string;
+  } | null>(null);
+
+  const COMBINE_DISTANCE = 100; // Distance threshold for combining topics
 
   // Throttled stage position update
   const setThrottledStagePos = useCallback(
@@ -204,21 +212,48 @@ export default function KonvaStage({
     setCursor('grabbing');
   }, []);
 
-  const handleDragMove = useCallback((topicId: string, e: KonvaEventObject<DragEvent>) => {
+  const handleDragMove = useCallback((topicId: string, e: KonvaEventObject<DragEvent>, dimensions?: { width: number; height: number }) => {
     const newX = e.target.x();
     const newY = e.target.y();
 
-    // Update topic position in real-time
+    // Update topic position and dimensions in real-time
     setTopics(prev => 
       prev.map(t =>
-        t.id === topicId ? { ...t, x: newX, y: newY } : t
+        t.id === topicId 
+          ? { 
+              ...t, 
+              x: newX, 
+              y: newY,
+              width: dimensions?.width,
+              height: dimensions?.height
+            } 
+          : t
       )
     );
-  }, []);
 
-  const handleDragEnd = useCallback(async (topicId: string, e: KonvaEventObject<DragEvent>) => {
+    // Check for potential combine target
+    const draggedTopic = topics.find(t => t.id === topicId);
+    if (!draggedTopic) return;
+
+    const nearbyTopic = topics.find(t => 
+      t.id !== topicId && 
+      Math.hypot(t.x - newX, t.y - newY) < COMBINE_DISTANCE
+    );
+
+    if (nearbyTopic) {
+      setCombineTarget({ sourceId: topicId, targetId: nearbyTopic.id });
+      setCursor('copy');
+    } else {
+      setCombineTarget(null);
+      setCursor('grabbing');
+    }
+  }, [topics]);
+
+  const handleDragEnd = useCallback(async (topicId: string, e: KonvaEventObject<DragEvent>, dimensions?: { width: number; height: number }) => {
     setIsDraggingTopic(false);
     setCursor('grab');
+    setCombineTarget(null);
+    
     const draggedTopic = topics.find(t => t.id === topicId);
     if (!draggedTopic) return;
 
@@ -228,7 +263,7 @@ export default function KonvaStage({
     // Check for collision with other topics
     const otherTopic = topics.find(t => 
       t.id !== topicId && 
-      Math.hypot(t.x - newX, t.y - newY) < 100
+      Math.hypot(t.x - newX, t.y - newY) < COMBINE_DISTANCE
     );
 
     if (otherTopic) {
@@ -248,6 +283,8 @@ export default function KonvaStage({
         const result = await response.json();
         
         if (result.combinedTopic) {
+          // Create the new topic but don't set dimensions yet
+          // They will be set once the Topic component mounts and measures the text
           setTopics((prev: TopicState[]) => [
             ...prev.filter(t => t.id !== topicId && t.id !== otherTopic.id),
             {
@@ -264,10 +301,16 @@ export default function KonvaStage({
       }
     }
 
-    // If no combination occurred, just update the position
+    // If no combination occurred, just update the position and dimensions
     setTopics(prev =>
       prev.map(t =>
-        t.id === topicId ? { ...t, x: newX, y: newY } : t
+        t.id === topicId ? { 
+          ...t, 
+          x: newX, 
+          y: newY,
+          width: dimensions?.width,
+          height: dimensions?.height
+        } : t
       )
     );
   }, [topics, useCase]);
@@ -497,6 +540,114 @@ export default function KonvaStage({
     );
   }, [topics, useCaseCard]);
 
+  // Render lines connecting topics to their parents or use case
+  const renderCombineIndicator = useMemo(() => {
+    if (!combineTarget) return null;
+
+    const sourceTopic = topics.find(t => t.id === combineTarget.sourceId);
+    const targetTopic = topics.find(t => t.id === combineTarget.targetId);
+    if (!sourceTopic || !targetTopic) return null;
+
+    // Calculate midpoint for the merge indicator
+    const midX = (sourceTopic.x + targetTopic.x) / 2;
+    const midY = (sourceTopic.y + targetTopic.y) / 2;
+
+    // Use stored dimensions or fallback to defaults
+    const sourceWidth = sourceTopic.width || 400;
+    const sourceHeight = sourceTopic.height || 80;
+    const targetWidth = targetTopic.width || 400;
+    const targetHeight = targetTopic.height || 80;
+
+    return (
+      <>
+        {/* Glow effect around both topics */}
+        <Rect
+          x={targetTopic.x}
+          y={targetTopic.y}
+          width={targetWidth}
+          height={targetHeight}
+          cornerRadius={8}
+          fill="transparent"
+          stroke="#4A90E2"
+          strokeWidth={3}
+          opacity={0.8}
+          perfectDrawEnabled={false}
+          offsetX={targetWidth / 2}
+          offsetY={targetHeight / 2}
+          shadowColor="#4A90E2"
+          shadowBlur={15}
+          shadowOpacity={0.5}
+        />
+        <Rect
+          x={sourceTopic.x}
+          y={sourceTopic.y}
+          width={sourceWidth}
+          height={sourceHeight}
+          cornerRadius={8}
+          fill="transparent"
+          stroke="#4A90E2"
+          strokeWidth={3}
+          opacity={0.8}
+          perfectDrawEnabled={false}
+          offsetX={sourceWidth / 2}
+          offsetY={sourceHeight / 2}
+          shadowColor="#4A90E2"
+          shadowBlur={15}
+          shadowOpacity={0.5}
+        />
+
+        {/* Connection line with gradient */}
+        <Line
+          points={[
+            sourceTopic.x,
+            sourceTopic.y,
+            targetTopic.x,
+            targetTopic.y
+          ]}
+          stroke="#4A90E2"
+          strokeWidth={3}
+          opacity={0.8}
+          dash={[10, 5]}
+        />
+
+        {/* Merge indicator circle in the middle */}
+        <Group x={midX} y={midY}>
+          {/* Background circle */}
+          <Circle
+            radius={20}
+            fill="#4A90E2"
+            opacity={0.9}
+            perfectDrawEnabled={false}
+          />
+          {/* Plus symbol */}
+          <Line
+            points={[-8, 0, 8, 0]}
+            stroke="white"
+            strokeWidth={3}
+            perfectDrawEnabled={false}
+          />
+          <Line
+            points={[0, -8, 0, 8]}
+            stroke="white"
+            strokeWidth={3}
+            perfectDrawEnabled={false}
+          />
+        </Group>
+
+        {/* Pulsing animation on target */}
+        <Circle
+          x={targetTopic.x}
+          y={targetTopic.y}
+          radius={Math.max(targetWidth, targetHeight) / 4}
+          stroke="#4A90E2"
+          strokeWidth={2}
+          opacity={0.5}
+          perfectDrawEnabled={false}
+        />
+      </>
+    );
+  }, [combineTarget, topics]);
+
   return (
     <div style={{ cursor, background: '#1a1a1a' }}>
       <Stage 
@@ -513,6 +664,7 @@ export default function KonvaStage({
         scaleY={stagePos.scale}
         perfectDrawEnabled={false}
       >
+        {/* Base layer for topics and regular connections */}
         <Layer>
           {renderLines}
           {renderUseCase}
@@ -523,8 +675,8 @@ export default function KonvaStage({
               y={topic.y}
               text={topic.text}
               onDragStart={() => handleDragStart(topic.id)}
-              onDragMove={(e) => handleDragMove(topic.id, e)}
-              onDragEnd={(e) => handleDragEnd(topic.id, e)}
+              onDragMove={(e, dimensions) => handleDragMove(topic.id, e, dimensions)}
+              onDragEnd={(e, dimensions) => handleDragEnd(topic.id, e, dimensions)}
               onClick={() => handleTopicClick(topic.id, topic.x, topic.y)}
               onDelete={() => handleTopicDelete(topic.id)}
               onEdit={(newText) => handleTopicEdit(topic.id, newText)}
@@ -543,6 +695,11 @@ export default function KonvaStage({
               onEdit={(newText) => handleExpansionEdit(expansion.id, newText)}
             />
           ))}
+        </Layer>
+
+        {/* Overlay layer for combine indicators */}
+        <Layer>
+          {renderCombineIndicator}
         </Layer>
       </Stage>
     </div>
