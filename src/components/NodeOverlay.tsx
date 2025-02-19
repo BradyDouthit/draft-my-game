@@ -35,9 +35,9 @@ const COLORS: Record<ButtonColor, { normal: string; hover: string }> = {
 
 // Size configurations
 const SIZES: Record<ButtonSize, { radius: number; iconScale: number }> = {
-  small: { radius: 12, iconScale: 0.4 },
-  medium: { radius: 16, iconScale: 0.6 },
-  large: { radius: 20, iconScale: 0.8 }
+  small: { radius: 12, iconScale: 0.35 },
+  medium: { radius: 16, iconScale: 0.5 },
+  large: { radius: 20, iconScale: 0.7 }
 };
 
 const getIconForType = (type: ButtonIcon) => {
