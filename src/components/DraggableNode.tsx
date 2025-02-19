@@ -13,8 +13,8 @@ export interface DraggableNodeProps {
   width: number;
   height: number;
   onDragStart: () => void;
-  onDragMove: (e: KonvaEventObject<DragEvent>) => void;
-  onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
+  onDragMove: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
+  onDragEnd: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
   onEdit?: (newText: string) => void;
   onDelete?: () => void;
   onPlus?: () => void;
@@ -109,24 +109,32 @@ export function DraggableNode({
       }}
       onDragMove={(e) => {
         if (isEditing) return;
-        onDragMove(e);
+        onDragMove(e, { width, height });
       }}
       onDragEnd={(e) => {
         if (isEditing) return;
         if (groupRef.current) {
           groupRef.current.cache();
         }
-        onDragEnd(e);
+        onDragEnd(e, { width, height });
       }}
       onMouseEnter={() => {
         if (groupRef.current) {
           groupRef.current.clearCache();
+          const stage = groupRef.current.getStage();
+          if (stage) {
+            stage.container().style.cursor = 'grab';
+          }
         }
         setIsHoveredCanvas(true);
       }}
       onMouseLeave={() => {
         if (groupRef.current) {
           groupRef.current.cache();
+          const stage = groupRef.current.getStage();
+          if (stage) {
+            stage.container().style.cursor = 'default';
+          }
         }
         setIsHoveredCanvas(false);
       }}

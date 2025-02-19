@@ -8,8 +8,8 @@ interface TopicProps {
   y: number;
   text: string;
   onDragStart: () => void;
-  onDragMove: (e: KonvaEventObject<DragEvent>) => void;
-  onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
+  onDragMove: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
+  onDragEnd: (e: KonvaEventObject<DragEvent>, dimensions: { width: number; height: number }) => void;
   onClick?: () => void;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
