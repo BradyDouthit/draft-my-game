@@ -1,54 +1,35 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
-import { validateAPIKey, readSystemPrompt, createErrorResponse, parseJSON } from "@/utils/api-validation";
+import { validateAPIKey, readSystemPrompt, createErrorResponse, extractAllFromXML } from "@/utils/api-validation";
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
-// Initialize Google AI client
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: DEFAULT_MODELS.TOPIC_GENERATION });
-
-// Log model configuration
-console.log(`[Topic Generation] Using model: ${DEFAULT_MODELS.TOPIC_GENERATION}`);
-
-interface TopicsResponse {
-  topics: string[];
+interface GenerateTopicsRequest {
+  useCase: string;
 }
 
-function validateTopicsResponse(data: any): data is TopicsResponse {
-  if (!data || typeof data !== "object") return false;
-  if (!Array.isArray(data.topics)) return false;
-  if (data.topics.length !== 10) return false;
-  return data.topics.every(
-    (topic: any) => typeof topic === "string" && topic.length > 0
-  );
+function validateGenerateTopicsRequest(data: any): data is GenerateTopicsRequest {
+  if (!data || typeof data !== 'object') return false;
+  if (typeof data.useCase !== 'string' || !data.useCase) return false;
+  return true;
 }
 
 export async function POST(request: Request) {
   try {
-    // Validate request
     if (!request.body) {
       return createErrorResponse("Request body is required", 400);
     }
 
     const body = await request.json();
-    const { useCase } = body;
-
-    if (!useCase || typeof useCase !== "string") {
-      return createErrorResponse("Use case must be a non-empty string", 400);
+    if (!validateGenerateTopicsRequest(body)) {
+      return createErrorResponse("Invalid request format", 400);
     }
 
-    if (useCase.length > 200) {
-      return createErrorResponse("Use case is too long (max 200 characters)", 400);
-    }
-
-    // Validate API key
     const keyError = await validateAPIKey();
     if (keyError) {
       return createErrorResponse(keyError.error, keyError.status);
     }
 
-    // Read system prompt
     const { prompt, error: promptError } = await readSystemPrompt(
       path.join(process.cwd(), "src", "app", "api", "generate-topics", "generateTopicsSystemPrompt.txt")
     );
@@ -56,28 +37,28 @@ export async function POST(request: Request) {
       return createErrorResponse(promptError.error, promptError.status);
     }
 
-    // Make API call
-    console.log(`[Topic Generation] Making request with model: ${DEFAULT_MODELS.TOPIC_GENERATION}`);
-    const result = await model.generateContent(
-      `${prompt}\n\nGenerate 10 interesting ideas relevant to someone who is ${useCase}.`
-    );
+    const fullPrompt = `${prompt}\n\n<context>
+  <useCase>${body.useCase}</useCase>
+</context>`;
+
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+    const model = genAI.getGenerativeModel({ model: DEFAULT_MODELS.TOPIC_GENERATION });
+
+    const result = await model.generateContent(fullPrompt);
     const response = await result.response;
     const content = response.text();
 
-    // Log full response
-    console.log('[Topic Generation] Raw response:', content);
-
-    // Parse and validate response
-    const { data, error: parseError } = await parseJSON<TopicsResponse>(content);
-    if (parseError) {
-      return createErrorResponse(parseError.error, parseError.status);
+    // Extract topics from XML response using the new utility function
+    const topics = extractAllFromXML(content, 'topic');
+    if (topics.length === 0) {
+      return createErrorResponse("No valid topics found in response", 500);
     }
 
-    if (!validateTopicsResponse(data)) {
-      return createErrorResponse("AI response did not match expected format", 500);
-    }
-
-    return NextResponse.json(data);
+    return new NextResponse(JSON.stringify({ topics }), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error("Unexpected error generating topics:", error);
     return createErrorResponse("An unexpected error occurred");

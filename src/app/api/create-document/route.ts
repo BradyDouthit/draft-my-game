@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
-import { validateAPIKey, readSystemPrompt, createErrorResponse } from "@/utils/api-validation";
+import { validateAPIKey, readSystemPrompt, createErrorResponse, extractFromXML } from "@/utils/api-validation";
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Only include the properties we need for document generation
@@ -39,21 +39,6 @@ function validateDocumentRequest(data: any): data is DocumentRequest {
     }
     return true;
   });
-}
-
-function extractContentFromXML(xmlString: string): string | null {
-  try {
-    // Simple XML parsing using regex to get content between <content> tags
-    const contentMatch = xmlString.match(/<content>([\s\S]*?)<\/content>/);
-    if (!contentMatch) {
-      console.error('No content tags found in response');
-      return null;
-    }
-    return contentMatch[1].trim();
-  } catch (error) {
-    console.error('Error parsing XML content:', error);
-    return null;
-  }
 }
 
 export async function POST(request: Request) {
@@ -106,7 +91,7 @@ ${topicsXML}
     const content = response.text();
 
     // Extract HTML content from XML response
-    const htmlContent = extractContentFromXML(content);
+    const htmlContent = extractFromXML(content, 'content');
     if (!htmlContent) {
       return createErrorResponse("Failed to extract content from response", 500);
     }

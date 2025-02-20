@@ -4,111 +4,110 @@ Input Format:
 <description>Description of idea to expand on</description>
 
 Output:
-Return your answer in the following JSON format:
-{
-  "topics": [
-    <string>,
-    <string>,
-    ... (no more than 15 topics)
-  ],
-  "error": <null | string>
-}
+Return your answer in the following XML format:
+<response>
+  <topics>
+    <topic>First topic here</topic>
+    <topic>Second topic here</topic>
+    <!-- Additional topics as needed (no more than 15) -->
+  </topics>
+</response>
 
 Guidelines:
 - Each topic must be directly relevant to indie game design.
 - The topics should be actionable or inspirational, capable of leading to innovative game concepts.
 - Use clear and engaging language without excessive jargon.
-- If the request is unrelated to game development/design, respond with an error string in the JSON and an empty array.
+- If the request is unrelated to game development/design, respond with an error string in the XML and an empty topics list.
 
 Examples:
 Input
 <description>Designing a sandbox game that emphasizes exploration, crafting, and creative building in a procedurally generated world.</description>
 Output
-{
-  "topics": [
-    "Procedural World Generation and Terrain Shaping",
-    "Resource Gathering and Crafting Systems",
-    "Modular Building and Construction Mechanics",
-    "Survival Elements and Environmental Challenges",
-    "Creative Mode for Artistic Expression",
-    "Multiplayer Collaboration and Community Projects",
-    "Innovative In-Game Circuitry",
-    "Dynamic Ecosystem and Biome Diversity",
-    "Role-Playing Adventure Storylines",
-    "Customizable Avatars and Skill Progression"
-  ]
-}
+<response>
+  <topics>
+    <topic>Procedural World Generation and Terrain Shaping</topic>
+    <topic>Resource Gathering and Crafting Systems</topic>
+    <topic>Modular Building and Construction Mechanics</topic>
+    <topic>Survival Elements and Environmental Challenges</topic>
+    <topic>Creative Mode for Artistic Expression</topic>
+    <topic>Multiplayer Collaboration and Community Projects</topic>
+    <topic>Innovative In-Game Circuitry</topic>
+    <topic>Dynamic Ecosystem and Biome Diversity</topic>
+    <topic>Role-Playing Adventure Storylines</topic>
+    <topic>Customizable Avatars and Skill Progression</topic>
+  </topics>
+</response>
 
 Input
 <description>Designing a life simulation and farming game emphasizing community building, resource management, and exploration</description>
 Output
-{
-  "topics": [
-    "Dynamic Farming and Crop Cultivation",
-    "Seasonal Weather and Environmental Effects",
-    "Community Interaction and NPC Relationships",
-    "Resource Management and Crafting Systems",
-    "Customizable Farm Layout and Housing",
-    "Local Market Economy and Trade",
-    "Story-Driven Quests and Personal Growth",
-    "Exploration of Hidden Areas and Secrets",
-    "Relaxing, Immersive Visual Style",
-    "Modular Skill Progression and Upgrade Paths"
-  ]
-}
+<response>
+  <topics>
+    <topic>Dynamic Farming and Crop Cultivation</topic>
+    <topic>Seasonal Weather and Environmental Effects</topic>
+    <topic>Community Interaction and NPC Relationships</topic>
+    <topic>Resource Management and Crafting Systems</topic>
+    <topic>Customizable Farm Layout and Housing</topic>
+    <topic>Local Market Economy and Trade</topic>
+    <topic>Story-Driven Quests and Personal Growth</topic>
+    <topic>Exploration of Hidden Areas and Secrets</topic>
+    <topic>Relaxing, Immersive Visual Style</topic>
+    <topic>Modular Skill Progression and Upgrade Paths</topic>
+  </topics>
+</response>
 
 Input
 <description>making a challenging platformer that combines tight control, emotional narrative elements, and innovative level design</description>
 Output
-{
-  "topics": [
-    "Precision Platforming Mechanics",
-    "Responsive Control Systems",
-    "Dynamic Level Shifts and Obstacles",
-    "Emotional Narrative Integration",
-    "Minimalist Pixel Art Aesthetic",
-    "Incremental Difficulty Progression",
-    "Hidden Secrets and Bonus Challenges",
-    "Inspirational Soundtrack and Audio Cues",
-    "Environmental Storytelling through Levels",
-    "Player Resilience and Character Growth"
-  ]
-}
+<response>
+  <topics>
+    <topic>Precision Platforming Mechanics</topic>
+    <topic>Responsive Control Systems</topic>
+    <topic>Dynamic Level Shifts and Obstacles</topic>
+    <topic>Emotional Narrative Integration</topic>
+    <topic>Minimalist Pixel Art Aesthetic</topic>
+    <topic>Incremental Difficulty Progression</topic>
+    <topic>Hidden Secrets and Bonus Challenges</topic>
+    <topic>Inspirational Soundtrack and Audio Cues</topic>
+    <topic>Environmental Storytelling through Levels</topic>
+    <topic>Player Resilience and Character Growth</topic>
+  </topics>
+</response>
 
 Input
 <description>Developing a horror game that emphasizes atmospheric tension, psychological terror, and survival mechanics in an eerie, abandoned setting.</description>
 Output
-{
-  "topics": [
-    "Atmospheric Lighting and Soundscapes",
-    "Psychological Horror Elements",
-    "Resource Scarcity and Survival Mechanics",
-    "Eerie, Abandoned Environments",
-    "Unpredictable AI-Driven Enemies",
-    "Non-linear Storytelling with Hidden Lore",
-    "Dynamic Tension and Jump Scares",
-    "Interactive Puzzle Solving under Pressure",
-    "Minimalistic, Gritty Visual Aesthetics",
-    "Themes of Isolation and Vulnerability"
-  ]
-}
+<response>
+  <topics>
+    <topic>Atmospheric Lighting and Soundscapes</topic>
+    <topic>Psychological Horror Elements</topic>
+    <topic>Resource Scarcity and Survival Mechanics</topic>
+    <topic>Eerie, Abandoned Environments</topic>
+    <topic>Unpredictable AI-Driven Enemies</topic>
+    <topic>Non-linear Storytelling with Hidden Lore</topic>
+    <topic>Dynamic Tension and Jump Scares</topic>
+    <topic>Interactive Puzzle Solving under Pressure</topic>
+    <topic>Minimalistic, Gritty Visual Aesthetics</topic>
+    <topic>Themes of Isolation and Vulnerability</topic>
+  </topics>
+</response>
 
 Input
 <description>Creating an innovative puzzle game that challenges players with creative problem-solving, unique mechanics, and a visually striking design.</description>
 Output
-{
-  "topics": [
-    "Innovative Puzzle Mechanics and Interactions",
-    "Abstract Visual and Audio Cues",
-    "Non-linear Puzzle Progression",
-    "Layered Challenge and Difficulty Curves",
-    "Mind-Bending Logic and Spatial Reasoning",
-    "Minimalist, Iconic Art Style",
-    "Narrative Elements Integrated into Puzzles",
-    "Dynamic Hints and Adaptive Solutions",
-    "Engaging and Intuitive User Interface",
-    "Replayability through Procedurally Generated Challenges"
-  ]
-}
+<response>
+  <topics>
+    <topic>Innovative Puzzle Mechanics and Interactions</topic>
+    <topic>Abstract Visual and Audio Cues</topic>
+    <topic>Non-linear Puzzle Progression</topic>
+    <topic>Layered Challenge and Difficulty Curves</topic>
+    <topic>Mind-Bending Logic and Spatial Reasoning</topic>
+    <topic>Minimalist, Iconic Art Style</topic>
+    <topic>Narrative Elements Integrated into Puzzles</topic>
+    <topic>Dynamic Hints and Adaptive Solutions</topic>
+    <topic>Engaging and Intuitive User Interface</topic>
+    <topic>Replayability through Procedurally Generated Challenges</topic>
+  </topics>
+</response>
 
 

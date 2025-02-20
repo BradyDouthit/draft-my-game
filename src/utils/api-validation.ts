@@ -84,4 +84,59 @@ export async function parseJSON<T>(content: string): Promise<{ data?: T; error?:
       }
     };
   }
+}
+
+export function extractFromXML(xmlString: string, tagName: string): string | null {
+  try {
+    const tagStart = `<${tagName}>`;
+    const tagEnd = `</${tagName}>`;
+
+    const startIndex = xmlString.indexOf(tagStart) + tagStart.length;
+    const endIndex = xmlString.indexOf(tagEnd);
+
+    if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
+      console.error(`No ${tagName} tags found in response`);
+      return null;
+    }
+
+    return xmlString.substring(startIndex, endIndex).trim();
+  } catch (error) {
+    console.error(`Error parsing XML ${tagName}:`, error);
+    return null;
+  }
+}
+
+export function extractAllFromXML(xmlString: string, tagName: string): string[] {
+  try {
+    const results: string[] = [];
+    let currentString = xmlString;
+    
+    while (true) {
+      const tagStart = `<${tagName}>`;
+      const tagEnd = `</${tagName}>`;
+
+      const startIndex = currentString.indexOf(tagStart);
+      if (startIndex === -1) break;
+
+      const actualStartIndex = startIndex + tagStart.length;
+      const endIndex = currentString.indexOf(tagEnd, actualStartIndex);
+      if (endIndex === -1) break;
+
+      const content = currentString.substring(actualStartIndex, endIndex).trim();
+      results.push(content);
+
+      // Move to the rest of the string
+      currentString = currentString.substring(endIndex + tagEnd.length);
+    }
+    
+    if (results.length === 0) {
+      console.error(`No ${tagName} tags found in response`);
+      return [];
+    }
+
+    return results;
+  } catch (error) {
+    console.error(`Error parsing XML ${tagName}:`, error);
+    return [];
+  }
 } 
