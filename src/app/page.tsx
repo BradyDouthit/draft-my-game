@@ -11,6 +11,7 @@ interface Topic {
   y: number;
   text: string;
   parentId?: string;
+  expansions?: string[];
 }
 
 const KonvaStage = dynamic(() => import('../components/KonvaStage'), {
@@ -69,6 +70,19 @@ export default function Home() {
     setTopics(prev => [...prev, newTopic]);
   };
 
+  // Get expansions for a topic
+  const getTopicExpansions = (topicId: string): string[] => {
+    const expansions = topics.find(t => t.id === topicId)?.expansions || [];
+    return expansions;
+  };
+
+  // Prepare topics with their expansions for the GDD
+  const topicsWithExpansions = topics.map(topic => ({
+    id: topic.id,
+    text: topic.text,
+    expansions: getTopicExpansions(topic.id)
+  }));
+
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       {/* Canvas */}
@@ -90,7 +104,11 @@ export default function Home() {
       />
 
       {useCase !== '' && topics.length > 0 && (
-        <Toolbar onCreateTopic={handleCreateTopic} />
+        <Toolbar 
+          onCreateTopic={handleCreateTopic}
+          useCase={useCase}
+          topics={topicsWithExpansions}
+        />
       )}
     </main>
   );
