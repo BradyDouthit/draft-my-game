@@ -39,6 +39,7 @@ interface TopicState {
   parentId?: string;
   width?: number;
   height?: number;
+  expansions?: string[];
 }
 
 interface TopicDimensions {
@@ -343,28 +344,39 @@ export default function KonvaStage({
         const result = await response.json();
         
         if (result.combinedTopic) {
-          // When creating a new combined topic:
+          // Collect all expansions from both items being combined
+          let combinedExpansions: string[] = [];
+          
           if (isDraggingExpansion) {
+            // If dragging an expansion, get its text
+            combinedExpansions.push(draggedItem.text);
             // Remove the dragged expansion
             setExpansions(prev => prev.filter(exp => exp.id !== topicId));
           } else {
+            // If dragging a topic, get its expansions
+            const draggedTopicExpansions = topics.find(t => t.id === topicId)?.expansions || [];
+            combinedExpansions = [...draggedTopicExpansions];
             // Remove the dragged topic
             setTopics(prev => prev.filter(t => t.id !== topicId));
           }
 
-          // Remove the target item
+          // Add expansions from the other item
           if (otherExpansion) {
-            setExpansions(prev => prev.filter(exp => exp.id !== otherExpansion.id));
+            combinedExpansions.push(otherItem.text);
+            setExpansions(prev => prev.filter(exp => exp.id !== otherItem.id));
           } else if (otherTopic) {
-            setTopics(prev => prev.filter(t => t.id !== otherTopic.id));
+            const otherTopicExpansions = topics.find(t => t.id === otherItem.id)?.expansions || [];
+            combinedExpansions = [...combinedExpansions, ...otherTopicExpansions];
+            setTopics(prev => prev.filter(t => t.id !== otherItem.id));
           }
 
-          // Add the new combined topic
+          // Add the new combined topic with all expansions
           const newTopic = {
             id: Date.now().toString(),
             x: newX,
             y: newY,
             text: result.combinedTopic,
+            expansions: combinedExpansions.length > 0 ? combinedExpansions : undefined
           };
 
           setTopics(prev => [...prev, newTopic]);
@@ -403,6 +415,10 @@ export default function KonvaStage({
       // Remove existing expansions for this topic
       console.log('Removing expansions for topic:', topicId);
       setExpansions(prev => prev.filter(e => e.parentId !== topicId));
+      // Clear expansions from the parent topic
+      setTopics(prev => prev.map(t => 
+        t.id === topicId ? { ...t, expansions: undefined } : t
+      ));
       return;
     }
 
@@ -431,6 +447,11 @@ export default function KonvaStage({
         console.warn('No expansions returned from the API');
         return;
       }
+
+      // Update the parent topic's expansions array
+      setTopics(prev => prev.map(t => 
+        t.id === topicId ? { ...t, expansions: expansionsArray } : t
+      ));
 
       const radius = 150;
       const n = expansionsArray.length;
@@ -490,8 +511,25 @@ export default function KonvaStage({
   }, []);
 
   const handleExpansionDelete = useCallback((expansionId: string) => {
+    // Find the expansion to get its parent topic ID
+    const expansion = expansions.find(e => e.id === expansionId);
+    if (!expansion) return;
+
+    // Remove the expansion
     setExpansions(prev => prev.filter(e => e.id !== expansionId));
-  }, []);
+
+    // Update the parent topic's expansions array
+    setTopics(prev => prev.map(t => {
+      if (t.id === expansion.parentId) {
+        // Get all remaining expansions for this topic
+        const remainingExpansions = expansions
+          .filter(e => e.parentId === t.id && e.id !== expansionId)
+          .map(e => e.text);
+        return { ...t, expansions: remainingExpansions.length > 0 ? remainingExpansions : undefined };
+      }
+      return t;
+    }));
+  }, [expansions]);
 
   const handleTopicEdit = useCallback((topicId: string, newText: string) => {
     setTopics(prev => prev.map(t => 
@@ -500,10 +538,27 @@ export default function KonvaStage({
   }, []);
 
   const handleExpansionEdit = useCallback((expansionId: string, newText: string) => {
+    // Find the expansion to get its parent topic ID
+    const expansion = expansions.find(e => e.id === expansionId);
+    if (!expansion) return;
+
+    // Update the expansion
     setExpansions(prev => prev.map(e => 
       e.id === expansionId ? { ...e, text: newText } : e
     ));
-  }, []);
+
+    // Update the parent topic's expansions array
+    setTopics(prev => prev.map(t => {
+      if (t.id === expansion.parentId) {
+        // Get all expansions for this topic with the updated text
+        const updatedExpansions = expansions
+          .filter(e => e.parentId === t.id)
+          .map(e => e.id === expansionId ? newText : e.text);
+        return { ...t, expansions: updatedExpansions };
+      }
+      return t;
+    }));
+  }, [expansions]);
 
   // Render function for the use case card
   const renderUseCase = useMemo(() => {

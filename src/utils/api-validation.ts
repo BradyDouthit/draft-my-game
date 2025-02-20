@@ -59,6 +59,13 @@ export async function parseJSON<T>(content: string): Promise<{ data?: T; error?:
         .trim();                     // Remove any extra whitespace
     }
 
+    if (content.includes('```html')) {
+      cleanContent = content
+        .replace(/```html\n?/g, '')  // Remove ```html and optional newline
+        .replace(/```\n?/g, '')      // Remove closing ``` and optional newline
+        .trim();                     // Remove any extra whitespace
+    }
+
     // Log the cleaning process if it happened
     if (cleanContent !== content) {
       console.log('[JSON Parser] Cleaned markdown from response');

@@ -16,10 +16,14 @@ Input Format:
 </context>
 
 Output:
-Return your answer in the following JSON format:
-{
-  "content": "<The full GDD in HTML format>"
-}
+Return your answer in the following XML format:
+<response>
+  <content>
+    <!-- Your HTML content goes here -->
+    <h1>Game Design Document</h1>
+    <!-- Rest of the document -->
+  </content>
+</response>
 
 Guidelines:
 1. Structure the document with clear sections using appropriate HTML headings (h1, h2, h3)

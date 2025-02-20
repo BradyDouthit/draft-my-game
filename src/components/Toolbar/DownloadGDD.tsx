@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Download } from 'react-feather';
+import { jsPDF } from 'jspdf';
 
 interface DownloadGDDProps {
   useCase: string;
@@ -32,26 +33,96 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
       // Get the HTML content
       const htmlContent = await response.text();
 
-      // Create a blob from the HTML content
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      
-      // Create a temporary download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${useCase.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-gdd.html`;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create a temporary div to parse the HTML
+      const container = document.createElement('div');
+      container.innerHTML = htmlContent;
+
+      // Create PDF document
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      // Get all the content sections, including expansions
+      const sections = container.querySelectorAll('h1, h2, h3, h4, p, ul, .expansion');
+      let yPos = 40;
+      const margin = 40;
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Process each section
+      sections.forEach((section) => {
+        // Handle different section types
+        switch (section.tagName.toLowerCase()) {
+          case 'h1':
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            break;
+          case 'h2':
+            // Add a page break before each major section
+            if (yPos > pageHeight - 200) {
+              doc.addPage();
+              yPos = 40;
+            }
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            break;
+          case 'h3':
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            break;
+          default:
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+        }
+
+        // Handle lists
+        if (section.tagName.toLowerCase() === 'ul') {
+          const items = section.querySelectorAll('li');
+          items.forEach((item) => {
+            const text = '• ' + item.textContent?.trim();
+            const lines = doc.splitTextToSize(text, maxWidth);
+            
+            lines.forEach((line: string) => {
+              if (yPos > pageHeight - 40) {
+                doc.addPage();
+                yPos = 40;
+              }
+              doc.text(line, margin, yPos);
+              yPos += 14;
+            });
+            yPos += 5; // Extra space between list items
+          });
+        } else {
+          // Handle regular text
+          const text = section.textContent?.trim() || '';
+          const lines = doc.splitTextToSize(text, maxWidth);
+          
+          lines.forEach((line: string) => {
+            if (yPos > pageHeight - 40) {
+              doc.addPage();
+              yPos = 40;
+            }
+            doc.text(line, margin, yPos);
+            yPos += 14;
+          });
+
+          // Add spacing after sections
+          yPos += section.tagName.toLowerCase().startsWith('h') ? 20 : 10;
+        }
+      });
+
+      // Save the PDF
+      const filename = `${useCase.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-gdd.pdf`;
+      doc.save(filename);
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error downloading GDD:', error);
       setIsLoading(false);
+      alert('Failed to generate document. Please try again.');
     }
   };
 

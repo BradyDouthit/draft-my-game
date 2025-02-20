@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
-import { validateAPIKey, readSystemPrompt, createErrorResponse, parseJSON } from "@/utils/api-validation";
+import { validateAPIKey, readSystemPrompt, createErrorResponse } from "@/utils/api-validation";
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Only include the properties we need for document generation
@@ -24,10 +24,6 @@ interface DocumentRequest {
   topics: Topic[];
 }
 
-interface DocumentResponse {
-  content: string;
-}
-
 function validateDocumentRequest(data: any): data is DocumentRequest {
   if (!data || typeof data !== 'object') return false;
   if (typeof data.useCase !== 'string' || !data.useCase) return false;
@@ -45,10 +41,19 @@ function validateDocumentRequest(data: any): data is DocumentRequest {
   });
 }
 
-function validateDocumentResponse(data: any): data is DocumentResponse {
-  if (!data || typeof data !== 'object') return false;
-  if (typeof data.content !== 'string' || !data.content) return false;
-  return true;
+function extractContentFromXML(xmlString: string): string | null {
+  try {
+    // Simple XML parsing using regex to get content between <content> tags
+    const contentMatch = xmlString.match(/<content>([\s\S]*?)<\/content>/);
+    if (!contentMatch) {
+      console.error('No content tags found in response');
+      return null;
+    }
+    return contentMatch[1].trim();
+  } catch (error) {
+    console.error('Error parsing XML content:', error);
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -100,17 +105,14 @@ ${topicsXML}
     const response = await result.response;
     const content = response.text();
 
-    const { data, error: parseError } = await parseJSON<DocumentResponse>(content);
-    if (parseError) {
-      return createErrorResponse(parseError.error, parseError.status);
+    // Extract HTML content from XML response
+    const htmlContent = extractContentFromXML(content);
+    if (!htmlContent) {
+      return createErrorResponse("Failed to extract content from response", 500);
     }
 
-    if (!validateDocumentResponse(data)) {
-      return createErrorResponse("Generated document did not match expected format", 500);
-    }
-
-    // Convert the markdown content to a simple HTML string that can be rendered as PDF
-    const htmlContent = `<!DOCTYPE html>
+    // Add styling wrapper around the HTML content
+    const styledHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -134,11 +136,11 @@ ${topicsXML}
   </style>
 </head>
 <body>
-  ${data.content}
+  ${htmlContent}
 </body>
 </html>`;
 
-    return new NextResponse(htmlContent, {
+    return new NextResponse(styledHtmlContent, {
       headers: {
         'Content-Type': 'text/html',
       },
