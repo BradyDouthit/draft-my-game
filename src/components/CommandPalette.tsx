@@ -28,6 +28,7 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
       onSubmit(inputValue);
       setInputValue('');
       setIsDocked(true);
+      setShowTooltip(false);
     }
   };
 
@@ -109,7 +110,7 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
             className={`
               relative px-4 py-2 text-lg rounded-lg
               ${isDarkMode 
-                ? 'bg-[#1a1a1a] text-white placeholder-gray-400' 
+                ? 'bg-[#2a2a2a] text-white placeholder-gray-400' 
                 : 'bg-white text-gray-900 placeholder-gray-500'
               }
               shadow-lg
@@ -120,7 +121,7 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
               ${isLoading ? 'border-transparent opacity-50' : ''}
               ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : 'w-full'}
             `}
-            placeholder={'Describe what you are building or say "add a new topic"'}
+            placeholder={'Enter your video game concept'}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -171,10 +172,11 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
 
             <div className="space-y-2">
               <p className="font-medium mb-2">How to use this tool:</p>
-              <p>1. Enter your role or use case above (e.g., "entrepreneur", "author", "student")</p>
-              <p>2. Press Enter to generate topics</p>
-              <p>3. Drag and combine topics on the canvas to generate new ideas</p>
+              <p>1. Enter your video game concept</p>
+              <p>2. Press Enter to generate topics which serve as a starting point for your game design</p>
+              <p>3. Drag and combine topics on the canvas to generate new ideas or click the plus to expand on an idea</p>
               <p>4. The AI will tailor combinations based on your specified role</p>
+              <p>5. Click the "Download GDD" button to generate a game design document!</p>
             </div>
           </div>
         </div>
