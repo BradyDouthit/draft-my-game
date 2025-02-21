@@ -95,7 +95,7 @@ export function extractFromXML(xmlString: string, tagName: string): string | nul
     const endIndex = xmlString.indexOf(tagEnd);
 
     if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
-      console.error(`No ${tagName} tags found in response`);
+      console.error(`No ${tagName} tags found in response: ${xmlString}`);
       return null;
     }
 
@@ -130,7 +130,7 @@ export function extractAllFromXML(xmlString: string, tagName: string): string[] 
     }
     
     if (results.length === 0) {
-      console.error(`No ${tagName} tags found in response`);
+      console.error(`No ${tagName} tags found in response: ${xmlString}`);
       return [];
     }
 

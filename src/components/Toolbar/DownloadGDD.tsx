@@ -122,7 +122,6 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
     } catch (error) {
       console.error('Error downloading GDD:', error);
       setIsLoading(false);
-      alert('Failed to generate document. Please try again.');
     }
   };
 

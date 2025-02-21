@@ -110,14 +110,40 @@ ${topicsXML}
       margin: 0 auto;
       padding: 2rem;
     }
-    h1, h2, h3 { color: #2c5282; }
-    h1 { font-size: 2rem; margin-bottom: 2rem; }
-    h2 { font-size: 1.5rem; margin: 2rem 0 1rem; }
-    h3 { font-size: 1.2rem; margin: 1.5rem 0 0.75rem; }
-    p { margin: 0.75rem 0; }
-    ul { margin: 0.5rem 0; padding-left: 2rem; }
-    li { margin: 0.25rem 0; }
-    .meta { color: #666; font-style: italic; }
+    h1, h2, h3 { 
+      color: #2c5282;
+      clear: both;
+    }
+    h1 { 
+      font-size: 2.5rem; 
+      margin: 2rem 0 2rem;
+      text-align: center;
+    }
+    h2 { 
+      font-size: 1.8rem; 
+      margin: 3rem 0 1.5rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+    h3 { 
+      font-size: 1.4rem; 
+      margin: 2rem 0 1rem;
+    }
+    p { margin: 1rem 0; }
+    ul { 
+      margin: 1rem 0; 
+      padding-left: 2rem; 
+    }
+    li { margin: 0.5rem 0; }
+    li > ul { 
+      margin: 0.5rem 0; 
+    }
+    .meta { 
+      color: #666; 
+      font-style: italic;
+      text-align: center;
+      margin: 1rem 0 3rem;
+    }
   </style>
 </head>
 <body>

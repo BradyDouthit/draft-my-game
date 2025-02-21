@@ -25,30 +25,68 @@ Return your answer in the following XML format:
   </content>
 </response>
 
-Guidelines:
-1. Structure the document with clear sections using appropriate HTML headings (h1, h2, h3)
-2. Start with an executive summary of the game concept
-3. Organize topics into logical categories (e.g., Gameplay, Features, Mechanics)
-4. For each topic:
-   - Provide a clear description
-   - Detail its implementation and importance
-   - Include relevant expansions as sub-features or variations
-5. Use proper HTML formatting:
-   - Paragraphs with <p> tags
-   - Lists with <ul> and <li> tags
-   - Emphasis with <strong> and <em> where appropriate
-6. Keep the tone professional but engaging
-7. Focus on clarity and actionability
-8. Include a metadata section with date and version
-9. Make the document easy to scan with clear hierarchy
-10. Ensure all features connect back to the core game concept
+Formatting Rules:
+1. Document Header:
+   - Title should be an h1
+   - Metadata section should use the text "[Enter date here]" for the date
+   - Version should be "1.0"
 
-Example Section Structure:
+2. Section Headers:
+   - Use h2 for main sections
+   - Use h3 for subsections
+   - Add margin-top: 3rem and margin-bottom: 1.5rem to all h2 elements
+   - Add margin-top: 2rem and margin-bottom: 1rem to all h3 elements
+   - Never place headers directly adjacent to each other without content in between
+
+3. Content Formatting:
+   - ALWAYS use bulleted lists (<ul> and <li>) for multiple related items
+   - NEVER use plain text with dashes or numbers for lists
+   - Each paragraph must be wrapped in <p> tags
+   - Use <strong> for emphasis, not <em>
+   - Keep paragraphs concise (2-3 sentences maximum)
+
+4. Section Organization:
+   - Each h2 section must start with a brief overview paragraph
+   - Features and mechanics must be presented as bulleted lists
+   - Each feature/mechanic should have a clear, single-sentence description
+   - Expansions should be nested as sub-bullets under their parent feature
+
+5. Content Rules:
+   - NEVER repeat information
+   - Each point should be mentioned exactly once
+   - Keep descriptions specific and actionable
+   - Focus on unique aspects of each feature
+   - If a feature has expansions, list them as sub-bullets
+
+Document Structure:
 1. Title and Metadata
+   - Game Design Document
+   - Date: [Enter date here]
+   - Version: 1.0
+
 2. Executive Summary
+   - Brief overview of the game concept
+   - Key unique selling points
+
 3. Core Game Concept
+   - Detailed game description
+   - Target audience
+   - Core gameplay loop
+
 4. Key Features
-5. Detailed Mechanics
-6. Technical Considerations
-7. Future Expansions
-8. Conclusion 
+   - Main features from topics
+   - Implementation details
+   - Expansions as sub-features
+
+5. Technical Considerations
+   - Platform requirements
+   - Key technical challenges
+   - Performance considerations
+
+6. Future Expansions
+   - Potential future features
+   - Scalability considerations
+
+7. Conclusion
+   - Summary of unique value
+   - Development priorities 
