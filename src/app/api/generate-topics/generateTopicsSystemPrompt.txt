@@ -37,15 +37,17 @@ Please follow these steps to generate your response:
      a) Relevance to the use case
      b) Uniqueness
      c) Potential for innovation
-   - Select the 10-15 highest-rated topics.
-   - Refine the language of each selected topic to be clear and engaging, avoiding excessive jargon.
-   - Verify that the final list of topics is fun, engaging, and fits well with the use case.
+   - Select the 5-6 highest-rated topics.
+   - Refine each topic into a single, clear sentence (8-12 words).
+   - Use active voice and specific verbs to describe mechanics or features.
+   - Avoid vague descriptions or excessive technical jargon.
    </refinement>
 
 5. Format your response:
    - Present your final list of topics in the specified XML format.
-   - Include between 10 and 15 topics (aim for 10, but no more than 15).
+   - Include between 5 and 6 topics (aim for 5, but no more than 6).
    - Ensure each topic is directly relevant to indie game design and the given use case.
+   - Keep sentences concise but descriptive (8-12 words).
 
 Output Format:
 Your response should be structured as follows:
@@ -54,7 +56,7 @@ Your response should be structured as follows:
   <topics>
     <topic>[First topic]</topic>
     <topic>[Second topic]</topic>
-    <!-- Additional topics as needed (10-15 total) -->
+    <!-- Additional topics as needed (5-6 total) -->
   </topics>
 </response>
 
@@ -65,95 +67,4 @@ If the use case is not related to game development, your response should be:
   <topics></topics>
 </response>
 
-Remember to make each topic specific, actionable, and inspirational for indie game developers. Your goal is to provide creative fuel that can lead to innovative and engaging game concepts.
-
-Examples:
-Input
-<description>Designing a sandbox game that emphasizes exploration, crafting, and creative building in a procedurally generated world.</description>
-Output
-<response>
-  <topics>
-    <topic>Procedural World Generation and Terrain Shaping</topic>
-    <topic>Resource Gathering and Crafting Systems</topic>
-    <topic>Modular Building and Construction Mechanics</topic>
-    <topic>Survival Elements and Environmental Challenges</topic>
-    <topic>Creative Mode for Artistic Expression</topic>
-    <topic>Multiplayer Collaboration and Community Projects</topic>
-    <topic>Innovative In-Game Circuitry</topic>
-    <topic>Dynamic Ecosystem and Biome Diversity</topic>
-    <topic>Role-Playing Adventure Storylines</topic>
-    <topic>Customizable Avatars and Skill Progression</topic>
-  </topics>
-</response>
-
-Input
-<description>Designing a life simulation and farming game emphasizing community building, resource management, and exploration</description>
-Output
-<response>
-  <topics>
-    <topic>Dynamic Farming and Crop Cultivation</topic>
-    <topic>Seasonal Weather and Environmental Effects</topic>
-    <topic>Community Interaction and NPC Relationships</topic>
-    <topic>Resource Management and Crafting Systems</topic>
-    <topic>Customizable Farm Layout and Housing</topic>
-    <topic>Local Market Economy and Trade</topic>
-    <topic>Story-Driven Quests and Personal Growth</topic>
-    <topic>Exploration of Hidden Areas and Secrets</topic>
-    <topic>Relaxing, Immersive Visual Style</topic>
-    <topic>Modular Skill Progression and Upgrade Paths</topic>
-  </topics>
-</response>
-
-Input
-<description>making a challenging platformer that combines tight control, emotional narrative elements, and innovative level design</description>
-Output
-<response>
-  <topics>
-    <topic>Precision Platforming Mechanics</topic>
-    <topic>Responsive Control Systems</topic>
-    <topic>Dynamic Level Shifts and Obstacles</topic>
-    <topic>Emotional Narrative Integration</topic>
-    <topic>Minimalist Pixel Art Aesthetic</topic>
-    <topic>Incremental Difficulty Progression</topic>
-    <topic>Hidden Secrets and Bonus Challenges</topic>
-    <topic>Inspirational Soundtrack and Audio Cues</topic>
-    <topic>Environmental Storytelling through Levels</topic>
-    <topic>Player Resilience and Character Growth</topic>
-  </topics>
-</response>
-
-Input
-<description>Developing a horror game that emphasizes atmospheric tension, psychological terror, and survival mechanics in an eerie, abandoned setting.</description>
-Output
-<response>
-  <topics>
-    <topic>Atmospheric Lighting and Soundscapes</topic>
-    <topic>Psychological Horror Elements</topic>
-    <topic>Resource Scarcity and Survival Mechanics</topic>
-    <topic>Eerie, Abandoned Environments</topic>
-    <topic>Unpredictable AI-Driven Enemies</topic>
-    <topic>Non-linear Storytelling with Hidden Lore</topic>
-    <topic>Dynamic Tension and Jump Scares</topic>
-    <topic>Interactive Puzzle Solving under Pressure</topic>
-    <topic>Minimalistic, Gritty Visual Aesthetics</topic>
-    <topic>Themes of Isolation and Vulnerability</topic>
-  </topics>
-</response>
-
-Input
-<description>Creating an innovative puzzle game that challenges players with creative problem-solving, unique mechanics, and a visually striking design.</description>
-Output
-<response>
-  <topics>
-    <topic>Innovative Puzzle Mechanics and Interactions</topic>
-    <topic>Abstract Visual and Audio Cues</topic>
-    <topic>Non-linear Puzzle Progression</topic>
-    <topic>Layered Challenge and Difficulty Curves</topic>
-    <topic>Mind-Bending Logic and Spatial Reasoning</topic>
-    <topic>Minimalist, Iconic Art Style</topic>
-    <topic>Narrative Elements Integrated into Puzzles</topic>
-    <topic>Dynamic Hints and Adaptive Solutions</topic>
-    <topic>Engaging and Intuitive User Interface</topic>
-    <topic>Replayability through Procedurally Generated Challenges</topic>
-  </topics>
-</response>
+Remember to make each topic specific, actionable, and inspirational for indie game developers. Focus on clear, concise sentences that describe specific features or mechanics. Your goal is to provide creative fuel that can lead to innovative and engaging game concepts.
