@@ -30,97 +30,25 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
         throw new Error('Failed to generate document');
       }
 
-      // Get the HTML content
-      const htmlContent = await response.text();
+      // Get the markdown content directly
+      const markdownContent = await response.text();
 
-      // Create a temporary div to parse the HTML
-      const container = document.createElement('div');
-      container.innerHTML = htmlContent;
+      // Create a Blob with the markdown content
+      const blob = new Blob([markdownContent], { type: 'text/markdown' });
+      const url = window.URL.createObjectURL(blob);
 
-      // Create PDF document
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4'
-      });
-
-      // Get all the content sections, including expansions
-      const sections = container.querySelectorAll('h1, h2, h3, h4, p, ul, .expansion');
-      let yPos = 40;
-      const margin = 40;
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      const maxWidth = pageWidth - (margin * 2);
-
-      // Process each section
-      sections.forEach((section) => {
-        // Handle different section types
-        switch (section.tagName.toLowerCase()) {
-          case 'h1':
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            break;
-          case 'h2':
-            // Add a page break before each major section
-            if (yPos > pageHeight - 200) {
-              doc.addPage();
-              yPos = 40;
-            }
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            break;
-          case 'h3':
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            break;
-          default:
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-        }
-
-        // Handle lists
-        if (section.tagName.toLowerCase() === 'ul') {
-          const items = section.querySelectorAll('li');
-          items.forEach((item) => {
-            const text = '• ' + item.textContent?.trim();
-            const lines = doc.splitTextToSize(text, maxWidth);
-            
-            lines.forEach((line: string) => {
-              if (yPos > pageHeight - 40) {
-                doc.addPage();
-                yPos = 40;
-              }
-              doc.text(line, margin, yPos);
-              yPos += 14;
-            });
-            yPos += 5; // Extra space between list items
-          });
-        } else {
-          // Handle regular text
-          const text = section.textContent?.trim() || '';
-          const lines = doc.splitTextToSize(text, maxWidth);
-          
-          lines.forEach((line: string) => {
-            if (yPos > pageHeight - 40) {
-              doc.addPage();
-              yPos = 40;
-            }
-            doc.text(line, margin, yPos);
-            yPos += 14;
-          });
-
-          // Add spacing after sections
-          yPos += section.tagName.toLowerCase().startsWith('h') ? 20 : 10;
-        }
-      });
-
-      // Save the PDF
-      const filename = `${useCase.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-gdd.pdf`;
-      doc.save(filename);
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'game-design-document.md';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
       setIsLoading(false);
     } catch (error) {
-      console.error('Error downloading GDD:', error);
+      console.error('Error downloading document:', error);
       setIsLoading(false);
     }
   };

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
-import { validateAPIKey, readSystemPrompt, createErrorResponse, extractFromXML } from "@/utils/api-validation";
+import { validateAPIKey, readSystemPrompt, createErrorResponse } from "@/utils/api-validation";
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Only include the properties we need for document generation
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       return createErrorResponse(promptError.error, promptError.status);
     }
 
-    // Format topics and expansions for the prompt
+    // Format topics and expansions for the input context
     const topicsXML = body.topics.map(topic => {
       const expansionsXML = topic.expansions 
         ? topic.expansions.map(exp => `        <expansion>${exp}</expansion>`).join('\n')
@@ -90,70 +90,9 @@ ${topicsXML}
     const response = await result.response;
     const content = response.text();
 
-    // Extract HTML content from XML response
-    const htmlContent = extractFromXML(content, 'content');
-    if (!htmlContent) {
-      return createErrorResponse("Failed to extract content from response", 500);
-    }
-
-    // Add styling wrapper around the HTML content
-    const styledHtmlContent = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    h1, h2, h3 { 
-      color: #2c5282;
-      clear: both;
-    }
-    h1 { 
-      font-size: 2.5rem; 
-      margin: 2rem 0 2rem;
-      text-align: center;
-    }
-    h2 { 
-      font-size: 1.8rem; 
-      margin: 3rem 0 1.5rem;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 0.5rem;
-    }
-    h3 { 
-      font-size: 1.4rem; 
-      margin: 2rem 0 1rem;
-    }
-    p { margin: 1rem 0; }
-    ul { 
-      margin: 1rem 0; 
-      padding-left: 2rem; 
-    }
-    li { margin: 0.5rem 0; }
-    li > ul { 
-      margin: 0.5rem 0; 
-    }
-    .meta { 
-      color: #666; 
-      font-style: italic;
-      text-align: center;
-      margin: 1rem 0 3rem;
-    }
-  </style>
-</head>
-<body>
-  ${htmlContent}
-</body>
-</html>`;
-
-    return new NextResponse(styledHtmlContent, {
+    return new NextResponse(content, {
       headers: {
-        'Content-Type': 'text/html',
+        'Content-Type': 'text/markdown',
       },
     });
   } catch (error) {

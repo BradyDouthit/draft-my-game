@@ -16,40 +16,58 @@ Input Format:
 </context>
 
 Output:
-Return your answer in the following XML format:
-<response>
-  <content>
-    <!-- Your HTML content goes here -->
-    <h1>Game Design Document</h1>
-    <!-- Rest of the document -->
-  </content>
-</response>
+Return your answer as a markdown document. Here's an example of the expected format:
+
+# Game Design Document  
+
+*Date: [Enter date here]*  
+*Version: 1.0*  
+
+## Executive Summary  
+A brief overview paragraph introducing the game concept. This section should capture the essence of the game in a concise manner.  
+
+- Core Gameplay Elements  
+  - Fast-Paced Combat System  
+  - Dynamic World Generation  
+- Unique Selling Points  
+  - Innovative Progression System  
+  - Seamless Multiplayer Integration  
+
+## Core Game Concept  
+The game revolves around an innovative blend of strategy and action elements.  
 
 Formatting Rules:
 1. Document Header:
-   - Title should be an h1
-   - Metadata section should use the text "[Enter date here]" for the date
+   - Title should be a level 1 heading (#)
+   - Metadata section should use italics for date and version
+   - Date should use the text "[Enter date here]"
    - Version should be "1.0"
+   - Add two spaces at the end of each header line
 
 2. Section Headers:
-   - Use h2 for main sections
-   - Use h3 for subsections
-   - Add margin-top: 3rem and margin-bottom: 1.5rem to all h2 elements
-   - Add margin-top: 2rem and margin-bottom: 1rem to all h3 elements
+   - Use level 2 headings (##) for main sections
+   - Use level 3 headings (###) for subsections
+   - Add a blank line before and after each heading
    - Never place headers directly adjacent to each other without content in between
+   - Headers should be at the start of the line with no leading spaces
+   - Add two spaces at the end of each header line
 
 3. Content Formatting:
-   - ALWAYS use bulleted lists (<ul> and <li>) for multiple related items
-   - NEVER use plain text with dashes or numbers for lists
-   - Each paragraph must be wrapped in <p> tags
-   - Use <strong> for emphasis, not <em>
+   - Only use bullet points (-) when there are two or more related items
+   - Each bullet point should start at the beginning of the line with no leading spaces
+   - For nested bullet points, indent with exactly 2 spaces
+   - Use **bold** for emphasis
    - Keep paragraphs concise (2-3 sentences maximum)
+   - All paragraphs should start at the beginning of the line with no leading spaces
+   - End all paragraphs with two spaces
+   - Use proper capitalization for all headings and bullet points
 
 4. Section Organization:
-   - Each h2 section must start with a brief overview paragraph
-   - Features and mechanics must be presented as bulleted lists
+   - Each level 2 section must start with a brief overview paragraph
+   - Only use bullet points for multiple related items
    - Each feature/mechanic should have a clear, single-sentence description
    - Expansions should be nested as sub-bullets under their parent feature
+   - Single items should be written as regular paragraphs
 
 5. Content Rules:
    - NEVER repeat information
@@ -57,6 +75,7 @@ Formatting Rules:
    - Keep descriptions specific and actionable
    - Focus on unique aspects of each feature
    - If a feature has expansions, list them as sub-bullets
+   - Maintain consistent capitalization throughout the document
 
 Document Structure:
 1. Title and Metadata
