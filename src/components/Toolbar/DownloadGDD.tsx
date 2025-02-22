@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download } from 'react-feather';
 import { jsPDF } from 'jspdf';
+import { track } from '@vercel/analytics';
 
 interface DownloadGDDProps {
   useCase: string;
@@ -27,6 +28,11 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
       });
 
       if (!response.ok) {
+        track('gdd_download_failed', {
+          error: 'API request failed',
+          useCase,
+          topicCount: topics.length
+        });
         throw new Error('Failed to generate document');
       }
 
@@ -46,9 +52,19 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
+      // Track successful download
+      track('gdd_download_success', {
+        useCase,
+        topicCount: topics.length,
+      });
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error downloading document:', error);
+      track('gdd_download_error', {
+        useCase,
+        topicCount: topics.length
+      });
       setIsLoading(false);
     }
   };
