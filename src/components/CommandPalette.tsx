@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
+import { TopicNode } from './FlowCanvas';
 
 interface CommandPaletteProps {
-  isLoading: boolean;
   isDarkMode: boolean;
-  onSubmit: (value: string) => void;
+  onTopicsGenerated: (topics: TopicNode[]) => void;
 }
 
-export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: CommandPaletteProps) {
+export default function CommandPalette({ isDarkMode, onTopicsGenerated }: CommandPaletteProps) {
   const [inputValue, setInputValue] = useState('');
   const [isDocked, setIsDocked] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check if tooltip has been dismissed before
   useEffect(() => {
@@ -22,10 +23,47 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
     localStorage.setItem('tooltipDismissed', 'true');
   };
 
+  // Handle submission and API call
+  const handleSubmit = async (value: string) => {
+    if (!value.trim()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Call the API to generate topics
+      const response = await fetch('/api/generate-topics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ useCase: value }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate topics');
+      }
+      
+      const data = await response.json();
+      
+      // Create topic nodes from the generated topics
+      const newTopics: TopicNode[] = data.topics.map((topic: string) => ({
+        id: `topic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        text: topic
+      }));
+      
+      // Send the topics back to the parent component
+      onTopicsGenerated(newTopics);
+    } catch (error) {
+      console.error('Error generating topics:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSubmit(inputValue);
+      handleSubmit(inputValue);
       setInputValue('');
       setIsDocked(true);
       setShowTooltip(false);

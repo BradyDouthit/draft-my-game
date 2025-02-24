@@ -1,0 +1,53 @@
+/* Override React Flow default node styles */
+
+/* Base node styles - remove background and padding */
+.react-flow__node {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Dark mode specific overrides */
+.dark .react-flow__node,
+.react-flow__node.dark-mode-node {
+  background: transparent !important;
+  color: white !important;
+}
+
+/* Light mode specific overrides */
+.react-flow__node.light-mode-node {
+  background: transparent !important;
+  color: black !important;
+}
+
+/* Ensure selection indicators work with transparency */
+.react-flow__node.selected {
+  box-shadow: none !important;
+}
+
+.react-flow__node.selected::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 8px;
+  border: 2px solid #3b82f6 !important;
+  background: transparent !important;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.dark .react-flow__node.selected::after {
+  border-color: #60a5fa !important;
+}
+
+/* Ensure handles are visible */
+.react-flow__handle {
+  opacity: 0.8;
+}
+
+.react-flow__handle:hover {
+  opacity: 1;
+} 
