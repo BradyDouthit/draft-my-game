@@ -1,3 +1,6 @@
+/* Import theme variables */
+@import '../styles/theme.css';
+
 /* Override React Flow default node styles */
 
 /* Base node styles - remove background and padding */
@@ -7,17 +10,42 @@
   border: none !important;
 }
 
-/* Dark mode specific overrides */
-.dark .react-flow__node,
-.react-flow__node.dark-mode-node {
+/* Light/dark theme node overrides */
+.react-flow__node {
   background: transparent !important;
-  color: white !important;
+  color: var(--text-primary) !important;
 }
 
-/* Light mode specific overrides */
-.react-flow__node.light-mode-node {
-  background: transparent !important;
-  color: black !important;
+/* Controls styling */
+.react-flow__controls {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 2px 4px var(--shadow) !important;
+}
+
+.react-flow__controls-button {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: var(--surface) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: var(--text-primary) !important;
+}
+
+/* MiniMap styling */
+.react-flow__minimap {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+}
+
+/* Edge styling */
+.react-flow__edge-path {
+  stroke: var(--edge-color) !important;
 }
 
 /* Ensure selection indicators work with transparency */
@@ -33,21 +61,38 @@
   right: -4px;
   bottom: -4px;
   border-radius: 8px;
-  border: 2px solid #3b82f6 !important;
+  border: 2px solid var(--accent-primary) !important;
   background: transparent !important;
   pointer-events: none;
   z-index: -1;
 }
 
-.dark .react-flow__node.selected::after {
-  border-color: #60a5fa !important;
-}
-
-/* Ensure handles are visible */
+/* Handle styling */
 .react-flow__handle {
+  background-color: var(--handle-color) !important;
   opacity: 0.8;
 }
 
 .react-flow__handle:hover {
   opacity: 1;
+}
+
+/* Attribution */
+.react-flow__attribution {
+  background-color: var(--background) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Edge text */
+.react-flow__edge-textbg {
+  fill: var(--background) !important;
+}
+
+.react-flow__edge-text {
+  fill: var(--text-primary) !important;
+}
+
+/* Connection line */
+.react-flow__connection-path {
+  stroke: var(--accent-primary) !important;
 } 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import FlowCanvas, { TopicNode } from '@/components/FlowCanvas';
 import CommandPalette from '@/components/CommandPalette';
+import '@/styles/theme.css';
 
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -27,7 +28,7 @@ export default function Home() {
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <ReactFlowProvider>
-        <main className="relative w-screen h-screen overflow-hidden bg-white dark:bg-gray-900">
+        <main className="relative w-screen h-screen overflow-hidden bg-[var(--background)]">
           <FlowCanvas topics={topics} isDarkMode={isDarkMode} />
           
           <CommandPalette

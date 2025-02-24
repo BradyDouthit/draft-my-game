@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css';
 
 // Custom CSS to override React Flow node styles
 import './flow-styles.css';
+import '../styles/theme.css';
 
 // Define types for our nodes
 export interface TopicNode {
@@ -47,11 +48,10 @@ function CustomNode({ data, isConnectable }: {
         type="target"
         position={Position.Top}
         isConnectable={isConnectable}
-        className="w-2 h-2 !bg-gray-400 dark:!bg-gray-500"
       />
-      <div className="px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md">
+      <div className="px-4 py-3 rounded-md border border-[var(--border)] bg-[var(--node-bg)] text-[var(--text-primary)] shadow-md">
         <div className="flex flex-col">
-          <div className="font-medium text-gray-900 dark:text-gray-100">
+          <div className="font-medium">
             {data.text}
           </div>
           
@@ -60,7 +60,7 @@ function CustomNode({ data, isConnectable }: {
               {data.expansions.map((expansion, index) => (
                 <div 
                   key={index} 
-                  className="text-xs text-gray-500 dark:text-gray-400 border-l-2 border-gray-300 dark:border-gray-600 pl-2"
+                  className="text-xs text-[var(--text-secondary)] border-l-2 border-[var(--border)] pl-2"
                 >
                   {expansion}
                 </div>
@@ -73,7 +73,6 @@ function CustomNode({ data, isConnectable }: {
         type="source"
         position={Position.Bottom}
         isConnectable={isConnectable}
-        className="w-2 h-2 !bg-gray-400 dark:!bg-gray-500"
       />
     </>
   );
@@ -100,7 +99,7 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
     },
     // This ensures the node has our styling without needing a custom type
     style: defaultNodeStyle,
-    className: isDarkMode ? 'dark-mode-node' : 'light-mode-node'
+    className: 'custom-node'
   }));
 
   // Create edges to connect parent-child relationships if they exist
@@ -117,10 +116,8 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
     }
     
     const newNodes: Node[] = topics.map((topic, index) => {
-      // Look for existing node using a function parameter instead of referencing nodes directly
       return {
         id: topic.id,
-        // We'll get the position during the setNodes call
         position: { 
           x: 250 + (index % 3) * 300, 
           y: 100 + Math.floor(index / 3) * 200 
@@ -128,10 +125,10 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
         data: { 
           text: topic.text,
           expansions: topic.expansions,
-          label: topic.text // Include a label for accessibility
+          label: topic.text
         },
         style: defaultNodeStyle,
-        className: isDarkMode ? 'dark-mode-node' : 'light-mode-node'
+        className: 'custom-node'
       };
     });
     
@@ -146,7 +143,7 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
           : newNode;
       });
     });
-  }, [topics, setNodes, isDarkMode]); // Added isDarkMode to dependencies
+  }, [topics, setNodes]); // Removed isDarkMode from dependencies since we're using CSS variables
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -157,15 +154,11 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
           type: 'smoothstep',
           markerEnd: {
             type: MarkerType.ArrowClosed,
-          },
-          style: {
-            stroke: isDarkMode ? '#6b7280' : '#9ca3af',
-            strokeWidth: 2
           }
         }, eds)
       );
     },
-    [setEdges, isDarkMode]
+    [setEdges]
   );
 
   // Define node types with our custom renderer
@@ -183,21 +176,17 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
-        className={isDarkMode ? 'react-flow-dark' : 'react-flow-light'}
         proOptions={{ hideAttribution: true }}
       >
         <Background 
           variant={BackgroundVariant.Dots} 
           gap={12} 
-          size={1} 
-          color={isDarkMode ? '#4b5563' : '#e5e7eb'} 
+          size={1}
+          color="var(--border)" 
         />
-        <Controls className="!bg-white dark:!bg-gray-800 !border-gray-200 dark:!border-gray-700" />
+        <Controls />
         <MiniMap 
-          className="!bg-white dark:!bg-gray-800 !border-gray-200 dark:!border-gray-700"
           maskColor={isDarkMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(240, 240, 240, 0.1)'}
-          nodeColor={isDarkMode ? '#4b5563' : '#e5e7eb'}
-          nodeStrokeColor={isDarkMode ? '#1f2937' : '#ffffff'}
         />
       </ReactFlow>
     </div>

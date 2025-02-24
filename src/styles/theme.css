@@ -1,0 +1,76 @@
+/* Theme CSS Variables for consistent styling across components */
+
+:root {
+  /* Light theme variables */
+  --light-background: #ffffff;
+  --light-surface: #f3f4f6;
+  --light-text-primary: #111827;
+  --light-text-secondary: #4b5563; 
+  --light-text-muted: #6b7280;
+  --light-border: #e5e7eb;
+  --light-shadow: rgba(0, 0, 0, 0.1);
+  --light-accent-primary: #3b82f6;
+  --light-accent-secondary: #60a5fa;
+  --light-accent-hover: #2563eb;
+  --light-node-bg: #f3f4f6;
+  --light-error: #ef4444;
+  --light-success: #10b981;
+  --light-handle-color: #3b82f6;
+  --light-edge-color: #9ca3af;
+}
+
+.dark {
+  /* Dark theme variables */
+  --dark-background: #111827;
+  --dark-surface: #1f2937;
+  --dark-text-primary: #f9fafb;
+  --dark-text-secondary: #e5e7eb;
+  --dark-text-muted: #9ca3af;
+  --dark-border: #374151;
+  --dark-shadow: rgba(0, 0, 0, 0.3);
+  --dark-accent-primary: #60a5fa;
+  --dark-accent-secondary: #3b82f6;
+  --dark-accent-hover: #93c5fd;
+  --dark-node-bg: #1f2937;
+  --dark-error: #f87171;
+  --dark-success: #34d399;
+  --dark-handle-color: #60a5fa;
+  --dark-edge-color: #6b7280;
+}
+
+/* Theme variables that switch based on dark mode */
+:root {
+  --background: var(--light-background);
+  --surface: var(--light-surface);
+  --text-primary: var(--light-text-primary);
+  --text-secondary: var(--light-text-secondary);
+  --text-muted: var(--light-text-muted);
+  --border: var(--light-border);
+  --shadow: var(--light-shadow);
+  --accent-primary: var(--light-accent-primary);
+  --accent-secondary: var(--light-accent-secondary);
+  --accent-hover: var(--light-accent-hover);
+  --node-bg: var(--light-node-bg);
+  --error: var(--light-error);
+  --success: var(--light-success);
+  --handle-color: var(--light-handle-color);
+  --edge-color: var(--light-edge-color);
+}
+
+.dark {
+  --background: var(--dark-background);
+  --surface: var(--dark-surface);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --border: var(--dark-border);
+  --shadow: var(--dark-shadow);
+  --accent-primary: var(--dark-accent-primary);
+  --accent-secondary: var(--dark-accent-secondary);
+  --accent-hover: var(--dark-accent-hover);
+  --node-bg: var(--dark-node-bg);
+  --error: var(--dark-error);
+  --success: var(--dark-success);
+  --handle-color: var(--dark-handle-color);
+  --edge-color: var(--dark-edge-color);
+} 

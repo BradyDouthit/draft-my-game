@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TopicNode } from './FlowCanvas';
+import '../styles/theme.css';
 
 interface CommandPaletteProps {
   isDarkMode: boolean;
@@ -100,7 +101,7 @@ export default function CommandPalette({ isDarkMode, onTopicsGenerated }: Comman
         `}>
           <div className={`
             h-full w-full rounded-lg
-            ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}
+            bg-[var(--background)]
           `} />
         </div>
 
@@ -116,12 +117,9 @@ export default function CommandPalette({ isDarkMode, onTopicsGenerated }: Comman
               className={`
                 absolute inset-0 flex items-center justify-center
                 rounded-lg shadow-lg
-                ${isDarkMode 
-                  ? 'bg-[#1a1a1a] text-white hover:bg-[#2a2a2a]' 
-                  : 'bg-white text-gray-900 hover:bg-gray-50'
-                }
+                bg-[var(--background)] text-[var(--text-primary)] hover:bg-[var(--surface)]
                 transition-colors duration-200
-                border border-black/10
+                border border-[var(--border)]
               `}
             >
               <svg 
@@ -147,12 +145,9 @@ export default function CommandPalette({ isDarkMode, onTopicsGenerated }: Comman
             cols={50}
             className={`
               relative px-4 py-2 text-lg rounded-lg
-              ${isDarkMode 
-                ? 'bg-[#2a2a2a] text-white placeholder-gray-400' 
-                : 'bg-white text-gray-900 placeholder-gray-500'
-              }
+              bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)]
               shadow-lg
-              border border-black/10
+              border border-[var(--border)]
               focus:outline-none
               resize-none
               transition-all duration-300
