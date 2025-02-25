@@ -9,6 +9,11 @@ interface NodeData {
   label?: string;
 }
 
+// Extended NodeProps with custom handlers
+interface CustomNodeProps extends NodeProps {
+  onDelete?: (nodeId: string) => void;
+}
+
 // Default node styles
 const defaultNodeStyle = {
   borderRadius: '6px',
@@ -18,7 +23,7 @@ const defaultNodeStyle = {
   background: 'transparent'
 };
 
-export function Node({ data, isConnectable }: NodeProps) {
+export function Node({ data, isConnectable, id, onDelete }: CustomNodeProps) {
   const [showToolbar, setShowToolbar] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -32,13 +37,17 @@ export function Node({ data, isConnectable }: NodeProps) {
     isRoot ? 'border-2 border-[var(--accent-primary)]' : ''
   }`;
 
-  // Handlers for toolbar actions (no business logic for now)
+  // Handlers for toolbar actions
   const handleEdit = () => {
     console.log('Edit node:', text);
   };
 
   const handleDelete = () => {
-    console.log('Delete node:', text);
+    if (onDelete && id) {
+      onDelete(id);
+    } else {
+      console.log('Delete node:', text, '(No delete handler provided)');
+    }
   };
 
   // Clear any hide timeouts when component unmounts

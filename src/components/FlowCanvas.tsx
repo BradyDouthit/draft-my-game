@@ -14,7 +14,8 @@ import {
   Position,
   Node as ReactFlowNode,
   Panel,
-  ReactFlowInstance
+  ReactFlowInstance,
+  getConnectedEdges
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -41,51 +42,6 @@ const defaultNodeStyle = {
   padding: 0,
   background: 'transparent'
 };
-
-// Create a custom node that supports the data we need
-function CustomNode({ data, isConnectable }: { 
-  data: { text: string; expansions?: string[]; isRoot?: boolean },
-  isConnectable: boolean
-}) {
-  const nodeClasses = `px-4 py-3 rounded-md border border-[var(--border)] bg-[var(--node-bg)] text-[var(--text-primary)] shadow-md ${
-    data.isRoot ? 'border-2 border-[var(--accent-primary)]' : ''
-  }`;
-
-  return (
-    <>
-      <Handle
-        type="target"
-        position={Position.Top}
-        isConnectable={isConnectable}
-      />
-      <div className={nodeClasses}>
-        <div className="flex flex-col">
-          <div className={`font-medium ${data.isRoot ? 'text-[var(--accent-primary)]' : ''}`}>
-            {data.text}
-          </div>
-          
-          {data.expansions && data.expansions.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {data.expansions.map((expansion, index) => (
-                <div 
-                  key={index} 
-                  className="text-xs text-[var(--text-secondary)] border-l-2 border-[var(--border)] pl-2"
-                >
-                  {expansion}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        isConnectable={isConnectable}
-      />
-    </>
-  );
-}
 
 interface FlowCanvasProps {
   topics: TopicNode[];
@@ -114,10 +70,39 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   
-  // Define node types
-  const nodeTypes = {
-    custom: Node
-  };
+  // Handle node deletion
+  const handleNodeDelete = useCallback((nodeId: string) => {
+    // Find the node to delete
+    const nodeToDelete = nodes.find(node => node.id === nodeId);
+    
+    if (!nodeToDelete) return;
+    
+    // Don't allow deleting the root node
+    if (nodeToDelete.data?.isRoot) {
+      console.log('Cannot delete the root node');
+      return;
+    }
+    
+    // Remove the node
+    setNodes(prevNodes => prevNodes.filter(node => node.id !== nodeId));
+    
+    // Remove any edges connected to this node
+    setEdges(prevEdges => 
+      prevEdges.filter(edge => 
+        edge.source !== nodeId && edge.target !== nodeId
+      )
+    );
+    
+    // Mark as needing layout
+    contentChangedRef.current = true;
+    
+    console.log(`Node ${nodeId} deleted`);
+  }, [nodes, setNodes, setEdges]);
+
+  // Define node types with the delete handler passed to the custom node
+  const nodeTypes = React.useMemo(() => ({
+    custom: (props: any) => <Node {...props} onDelete={handleNodeDelete} />
+  }), [handleNodeDelete]);
 
   // Update nodes when topics or rootNode change
   React.useEffect(() => {
