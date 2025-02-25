@@ -4,7 +4,6 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -185,9 +184,6 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
           color="var(--border)" 
         />
         <Controls />
-        <MiniMap 
-          maskColor={isDarkMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(240, 240, 240, 0.1)'}
-        />
       </ReactFlow>
     </div>
   );
