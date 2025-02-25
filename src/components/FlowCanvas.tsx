@@ -187,7 +187,7 @@ export default function FlowCanvas({ topics }: FlowCanvasProps) {
           className="bg-[var(--background)]"
         >
           <Background
-            color={isDarkMode ? '#374151' : '#e5e7eb'}
+            color={isDarkMode ? '#2e2e2e' : '#9ca3af'}
             variant={BackgroundVariant.Dots}
             gap={24}
             size={1.5}

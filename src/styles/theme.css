@@ -20,22 +20,22 @@
 }
 
 .dark {
-  /* Dark theme variables */
-  --dark-background: #111827;
-  --dark-surface: #1f2937;
-  --dark-text-primary: #f9fafb;
-  --dark-text-secondary: #e5e7eb;
-  --dark-text-muted: #9ca3af;
-  --dark-border: #374151;
-  --dark-shadow: rgba(0, 0, 0, 0.3);
-  --dark-accent-primary: #60a5fa;
-  --dark-accent-secondary: #3b82f6;
-  --dark-accent-hover: #93c5fd;
-  --dark-node-bg: #1f2937;
+  /* Dark theme variables - Neutral gray tones */
+  --dark-background: #121212; /* More neutral dark background */
+  --dark-surface: #1e1e1e;    /* More neutral surface color */
+  --dark-text-primary: #f5f5f5;
+  --dark-text-secondary: #e0e0e0;
+  --dark-text-muted: #a0a0a0;
+  --dark-border: #2e2e2e;     /* More neutral border */
+  --dark-shadow: rgba(0, 0, 0, 0.4);
+  --dark-accent-primary: #6b6b6b;  /* Less blue, more gray */
+  --dark-accent-secondary: #4a4a4a; /* Less blue, more gray */
+  --dark-accent-hover: #7e7e7e;     /* Less blue, more gray */
+  --dark-node-bg: #212121;          /* More neutral node background */
   --dark-error: #f87171;
   --dark-success: #34d399;
-  --dark-handle-color: #60a5fa;
-  --dark-edge-color: #6b7280;
+  --dark-handle-color: #777777;     /* Less blue handle */
+  --dark-edge-color: #5c5c5c;       /* More neutral edge color */
 }
 
 /* Theme variables that switch based on dark mode */
