@@ -108,22 +108,6 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
       `}
     >
       <div className="relative">
-        {/* Loading gradient border container */}
-        <div className={`
-          absolute -inset-[2px] rounded-lg
-          ${isLoading ? 'opacity-100' : 'opacity-0'}
-          transition-opacity duration-300
-          pointer-events-none
-          bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 to-blue-500
-          animate-rotate-gradient
-          p-[2px]
-        `}>
-          <div className={`
-            h-full w-full rounded-lg
-            bg-[var(--background)]
-          `} />
-        </div>
-
         {/* Input Container */}
         <div className={`
           relative transition-all duration-300
@@ -174,7 +158,6 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
               focus:outline-none
               resize-none
               transition-all duration-300
-              ${isLoading ? 'border-transparent opacity-50' : ''}
               ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : 'w-full'}
             `}
             placeholder={'Enter your video game concept'}
