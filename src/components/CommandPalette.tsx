@@ -1,27 +1,43 @@
 import { useState, useEffect } from 'react';
 import { TopicNode } from './FlowCanvas';
-import '../styles/theme.css';
+import { useTheme } from '@/utils/ThemeProvider';
 
 interface CommandPaletteProps {
-  isDarkMode: boolean;
   onTopicsGenerated: (topics: TopicNode[]) => void;
 }
 
-export default function CommandPalette({ isDarkMode, onTopicsGenerated }: CommandPaletteProps) {
+export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProps) {
+  const { isDarkMode } = useTheme();
   const [inputValue, setInputValue] = useState('');
   const [isDocked, setIsDocked] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // Mark component as mounted
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Check if tooltip has been dismissed before
   useEffect(() => {
-    const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
-    setShowTooltip(!hasBeenDismissed);
-  }, []);
+    if (!mounted) return;
+    
+    try {
+      const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
+      setShowTooltip(!hasBeenDismissed);
+    } catch (error) {
+      console.warn('Could not access localStorage for tooltip state:', error);
+    }
+  }, [mounted]);
 
   const handleDismissTooltip = () => {
     setShowTooltip(false);
-    localStorage.setItem('tooltipDismissed', 'true');
+    try {
+      localStorage.setItem('tooltipDismissed', 'true');
+    } catch (error) {
+      console.warn('Could not save tooltip state to localStorage:', error);
+    }
   };
 
   // Handle submission and API call

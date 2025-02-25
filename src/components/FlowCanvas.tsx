@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -18,7 +18,8 @@ import '@xyflow/react/dist/style.css';
 
 // Custom CSS to override React Flow node styles
 import './flow-styles.css';
-import '../styles/theme.css';
+
+import { useTheme } from '@/utils/ThemeProvider';
 
 // Define types for our nodes
 export interface TopicNode {
@@ -79,10 +80,17 @@ function CustomNode({ data, isConnectable }: {
 
 interface FlowCanvasProps {
   topics: TopicNode[];
-  isDarkMode: boolean;
 }
 
-export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
+export default function FlowCanvas({ topics }: FlowCanvasProps) {
+  const { isDarkMode } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Convert topics to nodes format expected by React Flow
   const initialNodes: Node[] = topics.map((topic, index) => ({
     id: topic.id,
@@ -166,25 +174,27 @@ export default function FlowCanvas({ topics, isDarkMode }: FlowCanvasProps) {
   }), []);
 
   return (
-    <div className={`w-full h-full ${isDarkMode ? 'dark' : ''}`}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        fitView
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background 
-          variant={BackgroundVariant.Dots} 
-          gap={12} 
-          size={1}
-          color="var(--border)" 
-        />
-        <Controls />
-      </ReactFlow>
+    <div className="w-full h-full">
+      {mounted && (
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+          className="bg-[var(--background)]"
+        >
+          <Background
+            color={isDarkMode ? '#374151' : '#e5e7eb'}
+            variant={BackgroundVariant.Dots}
+            gap={24}
+            size={1.5}
+          />
+          <Controls />
+        </ReactFlow>
+      )}
     </div>
   );
 } 

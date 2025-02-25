@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import "@/styles/theme.css";
 
 export const metadata: Metadata = {
   title: "Draft My Game | Professional Game Design Document Generator",

@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/utils/ThemeProvider';
 
-interface ThemeSwitcherProps {
-  isDarkMode: boolean;
-  onToggle: () => void;
-}
-
-export default function ThemeSwitcher({ isDarkMode, onToggle }: ThemeSwitcherProps) {
+export default function ThemeSwitcher() {
+  const { isDarkMode, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // Set mounted state when component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Don't render anything until after component mounts to avoid hydration issues
+  if (!mounted) {
+    return null;
+  }
+  
   return (
     <button
-      onClick={onToggle}
-      className="fixed top-4 right-4 z-50 p-2 rounded-full transition-colors duration-200"
+      onClick={toggleTheme}
+      className="fixed top-4 right-4 z-50 p-2 rounded-full transition-colors duration-200 bg-[var(--surface)] border border-[var(--border)] shadow-md hover:bg-[var(--accent-secondary)] hover:text-white"
       aria-label={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
     >
       {isDarkMode ? (
         // Sun icon for when in dark mode (switching to light)
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6 text-white hover:text-yellow-200 transition-colors" 
+          className="h-6 w-6 text-[var(--text-primary)] hover:text-white transition-colors" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
@@ -32,7 +41,7 @@ export default function ThemeSwitcher({ isDarkMode, onToggle }: ThemeSwitcherPro
         // Moon icon for when in light mode (switching to dark)
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6 text-gray-800 hover:text-blue-600 transition-colors" 
+          className="h-6 w-6 text-[var(--text-primary)] hover:text-white transition-colors" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
