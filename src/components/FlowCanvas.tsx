@@ -12,7 +12,7 @@ import {
   Edge,
   Handle,
   Position,
-  Node,
+  Node as ReactFlowNode,
   Panel,
   ReactFlowInstance
 } from '@xyflow/react';
@@ -23,6 +23,7 @@ import './flow-styles.css';
 
 import { useTheme } from '@/utils/ThemeProvider';
 import { getTreeLayout } from '@/utils/treeLayout';
+import { Node } from './Node';
 
 // Define types for our nodes
 export interface TopicNode {
@@ -107,11 +108,16 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   }, []);
   
   // Initialize with empty arrays
-  const initialNodes: Node[] = [];
+  const initialNodes: ReactFlowNode[] = [];
   const initialEdges: Edge[] = [];
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  
+  // Define node types
+  const nodeTypes = {
+    custom: Node
+  };
 
   // Update nodes when topics or rootNode change
   React.useEffect(() => {
@@ -127,7 +133,7 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       return;
     }
     
-    const newNodes: Node[] = [];
+    const newNodes: ReactFlowNode[] = [];
     const newEdges: Edge[] = [];
     
     // Add root node if it exists
@@ -147,7 +153,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           borderWidth: 2,
           borderColor: 'var(--accent-primary)'
         },
-        className: 'custom-node root-node'
+        className: 'custom-node root-node',
+        type: 'custom' // Use our custom node with toolbar
       });
       
       // Create edges from root node to each topic
@@ -176,7 +183,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           label: topic.text
         },
         style: defaultNodeStyle,
-        className: 'custom-node'
+        className: 'custom-node',
+        type: 'custom' // Use our custom node with toolbar
       });
     });
     
@@ -251,58 +259,39 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     [setEdges]
   );
 
-  // Define node types with our custom renderer
-  const nodeTypes = React.useMemo(() => ({
-    default: CustomNode,
-  }), []);
-
-  // Manual re-layout button handler
-  const handleReLayout = useCallback(() => {
-    contentChangedRef.current = true;
-    if (!isLayoutingRef.current) {
-      applyTreeLayout();
-    }
-  }, [applyTreeLayout]);
-
   return (
     <div className="w-full h-full">
-      {mounted && (
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          onInit={setReactFlowInstance}
-          className="bg-[var(--background)]"
-          colorMode={isDarkMode ? 'dark' : 'light'}
-        >
-          <Background
-            color={isDarkMode ? '#2e2e2e' : '#9ca3af'}
-            variant={BackgroundVariant.Dots}
-            gap={24}
-            size={1.5}
-          />
-          <Controls />
-          <Panel position="bottom-right" className="mb-4">
-            <button
-              onClick={handleReLayout}
-              className={`
-                px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] 
-                border border-[var(--border)] rounded shadow-md transition-colors
-                ${isDarkMode 
-                  ? 'hover:bg-[#3a3a3a]' 
-                  : 'hover:bg-[#e5e7eb]'
-                }
-              `}
-            >
-              Organize
-            </button>
-          </Panel>
-        </ReactFlow>
-      )}
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onInit={setReactFlowInstance}
+        nodeTypes={nodeTypes}
+        fitView
+        minZoom={0.1}
+        maxZoom={1.5}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
+        className="bg-[var(--background)]"
+      >
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-[var(--background)]" />
+        <Controls className="!bg-[var(--surface)] !text-[var(--text-primary)] !border-[var(--border)]" />
+        <Panel position="bottom-right" className="mb-4">
+          <button
+            onClick={applyTreeLayout}
+            className={`
+              px-3 py-1.5 rounded-md text-sm font-medium
+              bg-[var(--surface)] text-[var(--text-primary)]
+              border border-[var(--border)]
+              hover:bg-[var(--surface-hover)]
+              transition-colors duration-200
+            `}
+          >
+            Re-organize
+          </button>
+        </Panel>
+      </ReactFlow>
     </div>
   );
 } 
