@@ -71,11 +71,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Always render the ThemeContext.Provider, but only add the "dark" class if mounted
   // This prevents hydration issues while still providing access to the theme context
+  
+  // Apply dark mode class to HTML element for better CSS specificity
+  React.useEffect(() => {
+    if (mounted) {
+      document.documentElement.classList.toggle('dark', isDarkMode);
+    }
+  }, [isDarkMode, mounted]);
+  
   return (
     <ThemeContext.Provider value={themeContextValue}>
-      <div className={mounted && isDarkMode ? 'dark' : ''}>
-        {children}
-      </div>
+      {children}
     </ThemeContext.Provider>
   );
 } 

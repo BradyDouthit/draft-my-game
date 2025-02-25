@@ -33,14 +33,23 @@
   box-shadow: 0 2px 4px var(--shadow) !important;
 }
 
+/* Target all buttons within ReactFlow */
+.react-flow button,
 .react-flow__controls-button {
   background-color: var(--surface) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
+  transition: background-color 0.2s !important;
 }
 
-.react-flow__controls-button:hover {
-  background-color: #e5e7eb !important; /* gray-200 */
+/* Light mode hover styles */
+html:not(.dark) .react-flow__controls-button:hover {
+  background-color: #e5e7eb !important; /* gray-200 for light mode */
+}
+
+/* Dark mode hover styles with simple selector now that we're using reactflow's built-in dark mode */
+.dark .react-flow__controls-button:hover {
+  background-color: #3a3a3a !important; /* Match Theme Switcher dark mode hover */
 }
 
 .react-flow__controls-button svg {

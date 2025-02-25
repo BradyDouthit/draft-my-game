@@ -277,6 +277,7 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           fitView
           onInit={setReactFlowInstance}
           className="bg-[var(--background)]"
+          colorMode={isDarkMode ? 'dark' : 'light'}
         >
           <Background
             color={isDarkMode ? '#2e2e2e' : '#9ca3af'}
@@ -288,7 +289,14 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           <Panel position="bottom-right" className="mb-4">
             <button
               onClick={handleReLayout}
-              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-gray-200 transition-colors"
+              className={`
+                px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] 
+                border border-[var(--border)] rounded shadow-md transition-colors
+                ${isDarkMode 
+                  ? 'hover:bg-[#3a3a3a]' 
+                  : 'hover:bg-[#e5e7eb]'
+                }
+              `}
             >
               Organize
             </button>
