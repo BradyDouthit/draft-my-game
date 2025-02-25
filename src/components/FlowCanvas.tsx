@@ -94,7 +94,6 @@ interface FlowCanvasProps {
 export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   const { isDarkMode } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [direction, setDirection] = useState<'TB' | 'LR'>('TB');
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   
   // Refs to prevent infinite loops
@@ -199,7 +198,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     isLayoutingRef.current = true;
     
     try {
-      const layoutedNodes = getTreeLayout([...nodes], [...edges], direction);
+      // Use vertical TB (top-to-bottom) layout
+      const layoutedNodes = getTreeLayout([...nodes], [...edges], 'TB');
       setNodes(layoutedNodes);
       
       // Reset content changed flag since we've applied layout
@@ -217,9 +217,9 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       console.error('Error applying tree layout:', error);
       isLayoutingRef.current = false;
     }
-  }, [nodes, edges, setNodes, direction, reactFlowInstance]);
+  }, [nodes, edges, setNodes, reactFlowInstance]);
 
-  // Apply layout when required: either direction changed or content changed
+  // Apply layout when required
   useEffect(() => {
     if (!mounted || nodes.length === 0) return;
     
@@ -232,15 +232,7 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       
       return () => clearTimeout(timer);
     }
-  }, [mounted, nodes.length, applyTreeLayout, direction, nodesInitializedRef]);
-
-  // Toggle direction between TB (top to bottom) and LR (left to right)
-  const toggleDirection = useCallback(() => {
-    setDirection(prev => {
-      contentChangedRef.current = true; // Mark as needing layout after direction change
-      return prev === 'TB' ? 'LR' : 'TB';
-    });
-  }, []);
+  }, [mounted, nodes.length, applyTreeLayout, nodesInitializedRef]);
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -293,24 +285,12 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
             size={1.5}
           />
           <Controls />
-          <Panel position="top-right" className="mt-16 flex flex-col gap-2">
+          <Panel position="bottom-right" className="mb-4">
             <button
               onClick={handleReLayout}
               className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
             >
               Re-arrange Tree
-            </button>
-            <button
-              onClick={toggleDirection}
-              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
-            >
-              {direction === 'TB' ? 'Vertical Tree ↓' : 'Horizontal Tree →'}
-            </button>
-            <button
-              onClick={() => reactFlowInstance?.fitView({ padding: 0.2 })}
-              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
-            >
-              Fit View
             </button>
           </Panel>
         </ReactFlow>

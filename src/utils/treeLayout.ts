@@ -10,8 +10,8 @@ export function getTreeLayout(nodes: Node[], edges: Edge[], direction: 'TB' | 'L
   // Set an object for the graph label
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 120,  // Increased horizontal spacing between nodes
-    ranksep: 150,  // Increased vertical spacing between ranks
+    nodesep: 150,  // Horizontal spacing between nodes in the same rank
+    ranksep: 120,  // Vertical spacing between ranks
     marginx: 50,
     marginy: 50,
     align: 'UL',  // Align nodes within their rank (Up Left)
@@ -20,6 +20,12 @@ export function getTreeLayout(nodes: Node[], edges: Edge[], direction: 'TB' | 'L
 
   // Default to assigning a new object as a label for each new edge.
   dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  // Find the root node for special handling
+  const rootNode = nodes.find(node => {
+    const nodeData = node.data as any;
+    return nodeData?.isRoot === true;
+  });
 
   // Add nodes to dagre with their dimensions
   nodes.forEach((node) => {
@@ -58,8 +64,8 @@ export function getTreeLayout(nodes: Node[], edges: Edge[], direction: 'TB' | 'L
   // Calculate layout
   dagre.layout(dagreGraph);
 
-  // Update node positions based on dagre calculations
-  return nodes.map((node) => {
+  // Get computed positions
+  const positionedNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
     
     return {
@@ -71,4 +77,39 @@ export function getTreeLayout(nodes: Node[], edges: Edge[], direction: 'TB' | 'L
       }
     };
   });
+
+  // Now ensure the root node is centered horizontally if we're using TB layout
+  if (direction === 'TB' && rootNode) {
+    // Find all nodes that are directly connected to the root
+    const childNodes = positionedNodes.filter(node => 
+      edges.some(edge => edge.source === rootNode.id && edge.target === node.id)
+    );
+    
+    if (childNodes.length > 0) {
+      // Find average X position of all child nodes
+      const totalX = childNodes.reduce((sum, node) => sum + node.position.x, 0);
+      const averageX = totalX / childNodes.length;
+      
+      // Find the root node in the positioned nodes
+      const positionedRoot = positionedNodes.find(n => n.id === rootNode.id);
+      
+      if (positionedRoot) {
+        // Find the index of the root node to update it
+        const rootIndex = positionedNodes.findIndex(n => n.id === rootNode.id);
+        
+        // Update the root node's position to be centered horizontally
+        if (rootIndex !== -1) {
+          positionedNodes[rootIndex] = {
+            ...positionedRoot,
+            position: {
+              ...positionedRoot.position,
+              x: averageX  // Center it horizontally at the average X of child nodes
+            }
+          };
+        }
+      }
+    }
+  }
+
+  return positionedNodes;
 } 
