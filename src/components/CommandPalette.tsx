@@ -3,7 +3,7 @@ import { TopicNode } from './FlowCanvas';
 import { useTheme } from '@/utils/ThemeProvider';
 
 interface CommandPaletteProps {
-  onTopicsGenerated: (topics: TopicNode[]) => void;
+  onTopicsGenerated: (topics: TopicNode[], inputValue: string) => void;
 }
 
 export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProps) {
@@ -68,8 +68,8 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
         text: topic
       }));
       
-      // Send the topics back to the parent component
-      onTopicsGenerated(newTopics);
+      // Send the topics back to the parent component along with the input value
+      onTopicsGenerated(newTopics, value);
     } catch (error) {
       console.error('Error generating topics:', error);
     } finally {
@@ -80,10 +80,13 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(inputValue);
-      setInputValue('');
-      setIsDocked(true);
-      setShowTooltip(false);
+      const currentInput = inputValue.trim();
+      if (currentInput) {
+        handleSubmit(currentInput);
+        setInputValue('');
+        setIsDocked(true);
+        setShowTooltip(false);
+      }
     }
   };
 

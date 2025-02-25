@@ -16,6 +16,16 @@
   color: var(--text-primary) !important;
 }
 
+/* Root node styles */
+.react-flow__node.root-node {
+  z-index: 10;
+}
+
+.root-node .custom-node {
+  background-color: var(--background) !important;
+  box-shadow: 0 0 10px var(--shadow) !important;
+}
+
 /* Controls styling */
 .react-flow__controls {
   background-color: var(--background) !important;

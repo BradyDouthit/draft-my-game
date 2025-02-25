@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,7 +12,9 @@ import {
   Edge,
   Handle,
   Position,
-  Node
+  Node,
+  Panel,
+  ReactFlowInstance
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -20,12 +22,14 @@ import '@xyflow/react/dist/style.css';
 import './flow-styles.css';
 
 import { useTheme } from '@/utils/ThemeProvider';
+import { getTreeLayout } from '@/utils/treeLayout';
 
 // Define types for our nodes
 export interface TopicNode {
   id: string;
   text: string;
   expansions?: string[];
+  isRoot?: boolean;
 }
 
 // Default node component styles (using CSS variables to support dark mode)
@@ -39,9 +43,13 @@ const defaultNodeStyle = {
 
 // Create a custom node that supports the data we need
 function CustomNode({ data, isConnectable }: { 
-  data: { text: string; expansions?: string[] },
+  data: { text: string; expansions?: string[]; isRoot?: boolean },
   isConnectable: boolean
 }) {
+  const nodeClasses = `px-4 py-3 rounded-md border border-[var(--border)] bg-[var(--node-bg)] text-[var(--text-primary)] shadow-md ${
+    data.isRoot ? 'border-2 border-[var(--accent-primary)]' : ''
+  }`;
+
   return (
     <>
       <Handle
@@ -49,9 +57,9 @@ function CustomNode({ data, isConnectable }: {
         position={Position.Top}
         isConnectable={isConnectable}
       />
-      <div className="px-4 py-3 rounded-md border border-[var(--border)] bg-[var(--node-bg)] text-[var(--text-primary)] shadow-md">
+      <div className={nodeClasses}>
         <div className="flex flex-col">
-          <div className="font-medium">
+          <div className={`font-medium ${data.isRoot ? 'text-[var(--accent-primary)]' : ''}`}>
             {data.text}
           </div>
           
@@ -80,55 +88,89 @@ function CustomNode({ data, isConnectable }: {
 
 interface FlowCanvasProps {
   topics: TopicNode[];
+  rootNode: TopicNode | null;
 }
 
-export default function FlowCanvas({ topics }: FlowCanvasProps) {
+export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   const { isDarkMode } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [direction, setDirection] = useState<'TB' | 'LR'>('TB');
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  
+  // Refs to prevent infinite loops
+  const isLayoutingRef = useRef(false);
+  const nodesInitializedRef = useRef(false);
+  const contentChangedRef = useRef(false);
   
   // Set mounted state after component mounts
   useEffect(() => {
     setMounted(true);
   }, []);
   
-  // Convert topics to nodes format expected by React Flow
-  const initialNodes: Node[] = topics.map((topic, index) => ({
-    id: topic.id,
-    // No specific type - use the default node with our own renderer
-    position: { 
-      x: 250 + (index % 3) * 300, 
-      y: 100 + Math.floor(index / 3) * 200 
-    },
-    data: { 
-      text: topic.text,
-      expansions: topic.expansions,
-      label: topic.text // Include a label for accessibility
-    },
-    // This ensures the node has our styling without needing a custom type
-    style: defaultNodeStyle,
-    className: 'custom-node'
-  }));
-
-  // Create edges to connect parent-child relationships if they exist
+  // Initialize with empty arrays
+  const initialNodes: Node[] = [];
   const initialEdges: Edge[] = [];
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Update nodes when topics change
+  // Update nodes when topics or rootNode change
   React.useEffect(() => {
-    if (topics.length === 0) {
+    // Skip if already layouting to prevent loops
+    if (isLayoutingRef.current) return;
+    
+    // Flag content as changed for later layout
+    contentChangedRef.current = true;
+    
+    if (!rootNode && topics.length === 0) {
       setNodes([]);
+      setEdges([]);
       return;
     }
     
-    const newNodes: Node[] = topics.map((topic, index) => {
-      return {
-        id: topic.id,
-        position: { 
-          x: 250 + (index % 3) * 300, 
-          y: 100 + Math.floor(index / 3) * 200 
+    const newNodes: Node[] = [];
+    const newEdges: Edge[] = [];
+    
+    // Add root node if it exists
+    if (rootNode) {
+      newNodes.push({
+        id: rootNode.id,
+        // Position will be calculated by dagre
+        position: { x: 0, y: 0 },
+        data: { 
+          text: rootNode.text,
+          expansions: rootNode.expansions,
+          label: rootNode.text,
+          isRoot: true
         },
+        style: {
+          ...defaultNodeStyle,
+          borderWidth: 2,
+          borderColor: 'var(--accent-primary)'
+        },
+        className: 'custom-node root-node'
+      });
+      
+      // Create edges from root node to each topic
+      topics.forEach((topic) => {
+        newEdges.push({
+          id: `edge-${rootNode.id}-${topic.id}`,
+          source: rootNode.id,
+          target: topic.id,
+          type: 'smoothstep',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          }
+        });
+      });
+    }
+    
+    // Add topic nodes
+    topics.forEach((topic) => {
+      newNodes.push({
+        id: topic.id,
+        // Position will be calculated by dagre
+        position: { x: 0, y: 0 },
         data: { 
           text: topic.text,
           expansions: topic.expansions,
@@ -136,25 +178,74 @@ export default function FlowCanvas({ topics }: FlowCanvasProps) {
         },
         style: defaultNodeStyle,
         className: 'custom-node'
-      };
-    });
-    
-    // Use functional update to access current state while avoiding the dependency
-    setNodes(currentNodes => {
-      return newNodes.map(newNode => {
-        // Check if there's an existing node with the same ID
-        const existingNode = currentNodes.find(n => n.id === newNode.id);
-        // If it exists, preserve its position, otherwise use the calculated position
-        return existingNode 
-          ? { ...newNode, position: existingNode.position }
-          : newNode;
       });
     });
-  }, [topics, setNodes]); // Removed isDarkMode from dependencies since we're using CSS variables
+    
+    // Set nodes and edges without layout first
+    setNodes(newNodes);
+    setEdges(newEdges);
+    
+    // Mark as initialized when first setting nodes
+    if (newNodes.length > 0) {
+      nodesInitializedRef.current = true;
+    }
+  }, [topics, rootNode, setNodes, setEdges]);
+
+  // Function to calculate and apply the tree layout
+  const applyTreeLayout = useCallback(() => {
+    if (nodes.length === 0 || isLayoutingRef.current) return;
+    
+    // Set flag to prevent layout loops
+    isLayoutingRef.current = true;
+    
+    try {
+      const layoutedNodes = getTreeLayout([...nodes], [...edges], direction);
+      setNodes(layoutedNodes);
+      
+      // Reset content changed flag since we've applied layout
+      contentChangedRef.current = false;
+      
+      // Fit view after layout with a small delay
+      setTimeout(() => {
+        if (reactFlowInstance) {
+          reactFlowInstance.fitView({ padding: 0.2 });
+        }
+        // Reset layouting flag after everything is done
+        isLayoutingRef.current = false;
+      }, 100);
+    } catch (error) {
+      console.error('Error applying tree layout:', error);
+      isLayoutingRef.current = false;
+    }
+  }, [nodes, edges, setNodes, direction, reactFlowInstance]);
+
+  // Apply layout when required: either direction changed or content changed
+  useEffect(() => {
+    if (!mounted || nodes.length === 0) return;
+    
+    // Only apply layout if nodes are initialized and not currently layouting
+    if (nodesInitializedRef.current && !isLayoutingRef.current && contentChangedRef.current) {
+      // Add delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        applyTreeLayout();
+      }, 50);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [mounted, nodes.length, applyTreeLayout, direction, nodesInitializedRef]);
+
+  // Toggle direction between TB (top to bottom) and LR (left to right)
+  const toggleDirection = useCallback(() => {
+    setDirection(prev => {
+      contentChangedRef.current = true; // Mark as needing layout after direction change
+      return prev === 'TB' ? 'LR' : 'TB';
+    });
+  }, []);
 
   // Handle edge connections
   const onConnect = useCallback(
     (params: Connection) => {
+      contentChangedRef.current = true; // Mark as needing layout after connection
       setEdges((eds) =>
         addEdge({
           ...params,
@@ -173,6 +264,14 @@ export default function FlowCanvas({ topics }: FlowCanvasProps) {
     default: CustomNode,
   }), []);
 
+  // Manual re-layout button handler
+  const handleReLayout = useCallback(() => {
+    contentChangedRef.current = true;
+    if (!isLayoutingRef.current) {
+      applyTreeLayout();
+    }
+  }, [applyTreeLayout]);
+
   return (
     <div className="w-full h-full">
       {mounted && (
@@ -184,6 +283,7 @@ export default function FlowCanvas({ topics }: FlowCanvasProps) {
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
+          onInit={setReactFlowInstance}
           className="bg-[var(--background)]"
         >
           <Background
@@ -193,6 +293,26 @@ export default function FlowCanvas({ topics }: FlowCanvasProps) {
             size={1.5}
           />
           <Controls />
+          <Panel position="top-right" className="mt-16 flex flex-col gap-2">
+            <button
+              onClick={handleReLayout}
+              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
+            >
+              Re-arrange Tree
+            </button>
+            <button
+              onClick={toggleDirection}
+              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
+            >
+              {direction === 'TB' ? 'Vertical Tree ↓' : 'Horizontal Tree →'}
+            </button>
+            <button
+              onClick={() => reactFlowInstance?.fitView({ padding: 0.2 })}
+              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
+            >
+              Fit View
+            </button>
+          </Panel>
         </ReactFlow>
       )}
     </div>
