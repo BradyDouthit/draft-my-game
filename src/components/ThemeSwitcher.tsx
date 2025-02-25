@@ -24,7 +24,7 @@ export default function ThemeSwitcher() {
         bg-[var(--surface)] border border-[var(--border)] shadow-md 
         ${isDarkMode 
           ? 'hover:bg-[#3a3a3a]' 
-          : 'hover:bg-[var(--accent-secondary)] hover:text-white'
+          : 'hover:bg-gray-200 hover:text-[var(--text-primary)]'
         }
       `}
       aria-label={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
@@ -33,7 +33,7 @@ export default function ThemeSwitcher() {
         // Sun icon for when in dark mode (switching to light)
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6 text-[var(--text-primary)] hover:text-white transition-colors" 
+          className="h-6 w-6 text-[var(--text-primary)] transition-colors" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
@@ -49,7 +49,7 @@ export default function ThemeSwitcher() {
         // Moon icon for when in light mode (switching to dark)
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6 text-[var(--text-primary)] hover:text-white transition-colors" 
+          className="h-6 w-6 text-[var(--text-primary)] transition-colors" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"

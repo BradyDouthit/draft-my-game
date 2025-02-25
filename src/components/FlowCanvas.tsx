@@ -288,9 +288,9 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           <Panel position="bottom-right" className="mb-4">
             <button
               onClick={handleReLayout}
-              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-[var(--accent-secondary)] hover:text-white transition-colors"
+              className="px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] rounded shadow-md hover:bg-gray-200 transition-colors"
             >
-              Re-arrange Tree
+              Organize
             </button>
           </Panel>
         </ReactFlow>

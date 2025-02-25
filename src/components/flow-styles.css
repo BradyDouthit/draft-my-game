@@ -28,19 +28,19 @@
 
 /* Controls styling */
 .react-flow__controls {
-  background-color: var(--background) !important;
+  background-color: var(--surface) !important;
   border-color: var(--border) !important;
   box-shadow: 0 2px 4px var(--shadow) !important;
 }
 
 .react-flow__controls-button {
-  background-color: var(--background) !important;
+  background-color: var(--surface) !important;
   border-color: var(--border) !important;
   color: var(--text-primary) !important;
 }
 
 .react-flow__controls-button:hover {
-  background-color: var(--surface) !important;
+  background-color: #e5e7eb !important; /* gray-200 */
 }
 
 .react-flow__controls-button svg {

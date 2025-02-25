@@ -136,7 +136,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
               className={`
                 absolute inset-0 flex items-center justify-center
                 rounded-lg shadow-lg
-                bg-[var(--background)] text-[var(--text-primary)] hover:bg-[var(--surface)]
+                bg-[var(--surface)] text-[var(--text-primary)] hover:bg-gray-200
                 transition-colors duration-200
                 border border-[var(--border)]
               `}
