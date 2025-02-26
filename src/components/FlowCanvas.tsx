@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -58,6 +58,12 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   const nodesInitializedRef = useRef(false);
   const contentChangedRef = useRef(false);
   
+  // Keep track of nodes being dragged using a ref instead of state to avoid rerenders
+  const draggingNodeIdsRef = useRef<Set<string>>(new Set());
+  
+  // Track last drag end time to prevent immediate layout after dragging
+  const lastDragEndTimeRef = useRef<number>(0);
+  
   // Set mounted state after component mounts
   useEffect(() => {
     setMounted(true);
@@ -70,8 +76,56 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   
+  // Handle node drag events
+  const onNodeDragStart = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    draggingNodeIdsRef.current.add(node.id);
+    
+    // Instead of rebuilding the entire tree, just update this specific node
+    setNodes(prevNodes => 
+      prevNodes.map(n => {
+        if (n.id === node.id) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              isDragging: true
+            }
+          };
+        }
+        return n;
+      })
+    );
+  }, [setNodes]);
+  
+  const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    draggingNodeIdsRef.current.delete(node.id);
+    
+    // Update just this node's dragging state WITHOUT changing its position
+    setNodes(prevNodes => 
+      prevNodes.map(n => {
+        if (n.id === node.id) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              isDragging: false
+            }
+            // Don't update the position here - React Flow's onNodesChange has already handled that
+          };
+        }
+        return n;
+      })
+    );
+    
+    // Record the time of the drag end to prevent immediate layout recalculation
+    lastDragEndTimeRef.current = Date.now();
+    
+    // Don't mark content as changed immediately to prevent auto-layout
+    // This will allow the node to stay where the user dragged it
+  }, [setNodes]);
+  
   // Handle node deletion
-  const handleNodeDelete = useCallback((nodeId: string) => {
+  const handleNodeDelete = useCallback((nodeId: string, skipLayout = true) => {
     // Find the node to delete
     const nodeToDelete = nodes.find(node => node.id === nodeId);
     
@@ -93,10 +147,12 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       )
     );
     
-    // Mark as needing layout
-    contentChangedRef.current = true;
+    // Only mark as needing layout if skipLayout is false
+    if (!skipLayout) {
+      contentChangedRef.current = true;
+    }
     
-    console.log(`Node ${nodeId} deleted`);
+    console.log(`Node ${nodeId} deleted${skipLayout ? ' (layout preserved)' : ''}`);
   }, [nodes, setNodes, setEdges]);
 
   // Handle node text updates
@@ -122,8 +178,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     console.log(`Node ${nodeId} updated with text: ${newText}`);
   }, [setNodes]);
 
-  // Define node types with the delete handler passed to the custom node
-  const nodeTypes = React.useMemo(() => ({
+  // Define node types with proper memoization to prevent re-renders
+  const nodeTypes = useMemo(() => ({
     custom: (props: any) => <Node {...props} onDelete={handleNodeDelete} onEdit={handleNodeEdit} />
   }), [handleNodeDelete, handleNodeEdit]);
 
@@ -154,7 +210,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           text: rootNode.text,
           expansions: rootNode.expansions,
           label: rootNode.text,
-          isRoot: true
+          isRoot: true,
+          isDragging: false // Initialize as not dragging
         },
         style: {
           ...defaultNodeStyle,
@@ -188,7 +245,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
         data: { 
           text: topic.text,
           expansions: topic.expansions,
-          label: topic.text
+          label: topic.text,
+          isDragging: false // Initialize as not dragging
         },
         style: defaultNodeStyle,
         className: 'custom-node',
@@ -208,7 +266,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
 
   // Function to calculate and apply the tree layout
   const applyTreeLayout = useCallback(() => {
-    if (nodes.length === 0 || isLayoutingRef.current) return;
+    // Don't apply layout if there are nodes being dragged
+    if (nodes.length === 0 || isLayoutingRef.current || draggingNodeIdsRef.current.size > 0) return;
     
     // Set flag to prevent layout loops
     isLayoutingRef.current = true;
@@ -239,8 +298,19 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   useEffect(() => {
     if (!mounted || nodes.length === 0) return;
     
-    // Only apply layout if nodes are initialized and not currently layouting
-    if (nodesInitializedRef.current && !isLayoutingRef.current && contentChangedRef.current) {
+    // Don't apply layout if:
+    // 1. Nodes aren't initialized
+    // 2. We're already layouting
+    // 3. No content has changed requiring layout
+    // 4. Nodes are being dragged
+    // 5. It's within 1 second of the last drag end
+    const isDragCooldownActive = Date.now() - lastDragEndTimeRef.current < 1000;
+    
+    if (nodesInitializedRef.current && 
+        !isLayoutingRef.current && 
+        contentChangedRef.current &&
+        draggingNodeIdsRef.current.size === 0 &&
+        !isDragCooldownActive) {
       // Add delay to ensure DOM is ready
       const timer = setTimeout(() => {
         applyTreeLayout();
@@ -268,20 +338,21 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   );
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full bg-[var(--canvas-bg)]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onInit={setReactFlowInstance}
         nodeTypes={nodeTypes}
         fitView
-        minZoom={0.1}
-        maxZoom={1.5}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
-        className="bg-[var(--background)]"
+        fitViewOptions={{ padding: 0.2 }}
+        proOptions={{ hideAttribution: true }}
+        className={isDarkMode ? 'dark-theme' : 'light-theme'}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-[var(--background)]" />
         <Controls className="!bg-[var(--surface)] !text-[var(--text-primary)] !border-[var(--border)]" />
