@@ -456,39 +456,43 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-[var(--background)]" />
         <Controls className="!bg-[var(--surface)] !text-[var(--text-primary)] !border-[var(--border)]" />
         
-        {/* Re-organize button */}
-        <Panel position="bottom-right" className="mb-4">
-          <button
-            onClick={applyTreeLayout}
-            className={`
-              px-3 py-1.5 rounded-md text-sm font-medium
-              bg-[var(--surface)] text-[var(--text-primary)]
-              border border-[var(--border)]
-              hover:bg-[var(--surface-hover)]
-              transition-colors duration-200
-            `}
-          >
-            Re-organize
-          </button>
-        </Panel>
+        {/* Re-organize button - only show when nodes exist */}
+        {nodes.length > 0 && (
+          <Panel position="bottom-right" className="mb-4">
+            <button
+              onClick={applyTreeLayout}
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium
+                bg-[var(--surface)] text-[var(--text-primary)]
+                border border-[var(--border)]
+                hover:bg-[var(--surface-hover)]
+                transition-colors duration-200
+              `}
+            >
+              Re-organize
+            </button>
+          </Panel>
+        )}
         
         {/* Wrap the toolbar in a Panel component so it receives events correctly */}
-        <Panel 
-          position="bottom-center" 
-          className="mb-6 z-10 pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Toolbar 
-            onCreateTopic={handleAddNode} 
-            onDownloadGDD={handleDownloadGDD} 
-            useCase="game-design" 
-            topics={nodes.map(node => ({
-              id: node.id,
-              text: node.data.text as string,
-              expansions: (node.data.expansions || []) as string[]
-            }))} 
-          />
-        </Panel>
+        {nodes.length > 0 && (
+          <Panel 
+            position="bottom-center" 
+            className="mb-6 z-10 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Toolbar 
+              onCreateTopic={handleAddNode} 
+              onDownloadGDD={handleDownloadGDD} 
+              useCase="game-design" 
+              topics={nodes.map(node => ({
+                id: node.id,
+                text: node.data.text as string,
+                expansions: (node.data.expansions || []) as string[]
+              }))} 
+            />
+          </Panel>
+        )}
       </ReactFlow>
     </div>
   );
