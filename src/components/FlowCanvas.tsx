@@ -337,6 +337,101 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     [setEdges]
   );
 
+  // Handle downloading the Game Design Document (GDD)
+  const handleDownloadGDD = useCallback(() => {
+    if (!nodes.length) {
+      alert('No content to download');
+      return;
+    }
+
+    try {
+      // Create a structured JSON representation of the flow
+      const gddData = {
+        title: "Game Design Document",
+        created: new Date().toISOString(),
+        rootNode: nodes.find(node => node.data.isRoot)?.data?.text || "",
+        nodes: nodes.map(node => ({
+          id: node.id,
+          text: node.data.text,
+          expansions: node.data.expansions || [],
+          isRoot: node.data.isRoot || false,
+          position: node.position
+        })),
+        connections: edges.map(edge => ({
+          source: edge.source,
+          target: edge.target
+        }))
+      };
+
+      // Convert to JSON string with pretty formatting
+      const jsonString = JSON.stringify(gddData, null, 2);
+      
+      // Create a blob and download link
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'game-design-document.json';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading GDD:', error);
+      alert('Failed to download GDD');
+    }
+  }, [nodes, edges]);
+
+  // Handle adding a new node to the canvas
+  const handleAddNode = useCallback(() => {
+    const newNodeId = `node-${Date.now()}`;
+    
+    // Create a new node
+    const newNode: ReactFlowNode = {
+      id: newNodeId,
+      // Position will be near the center but slightly offset to be visible
+      position: { 
+        x: Math.random() * 100 - 50, 
+        y: Math.random() * 100 - 50 
+      },
+      data: {
+        text: 'New Node',
+        expansions: [],
+        label: 'New Node',
+        isDragging: false
+      },
+      style: defaultNodeStyle,
+      className: 'custom-node',
+      type: 'custom'
+    };
+    
+    // Add the node
+    setNodes(prevNodes => [...prevNodes, newNode]);
+    
+    // If there's a root node, create an edge from root to new node
+    const rootNode = nodes.find(node => node.data.isRoot);
+    if (rootNode) {
+      const newEdge: Edge = {
+        id: `edge-${rootNode.id}-${newNodeId}`,
+        source: rootNode.id,
+        target: newNodeId,
+        type: 'smoothstep',
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+        }
+      };
+      setEdges(prevEdges => [...prevEdges, newEdge]);
+    }
+    
+    // Mark content as changed to trigger layout
+    contentChangedRef.current = true;
+    
+  }, [nodes, setNodes, setEdges]);
+
   return (
     <div className="w-full h-full bg-[var(--canvas-bg)]">
       <ReactFlow
@@ -356,6 +451,8 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-[var(--background)]" />
         <Controls className="!bg-[var(--surface)] !text-[var(--text-primary)] !border-[var(--border)]" />
+        
+        {/* Re-organize button */}
         <Panel position="bottom-right" className="mb-4">
           <button
             onClick={applyTreeLayout}
@@ -370,6 +467,33 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
             Re-organize
           </button>
         </Panel>
+        
+        {/* Floating Toolbar */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="flex items-center space-x-3 bg-[var(--surface)] rounded-lg shadow-lg border border-[var(--border)] p-2">
+            <button
+              onClick={handleDownloadGDD}
+              className="flex items-center px-4 py-2 rounded-md text-sm font-medium bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+              title="Download Game Design Document"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              Download GDD
+            </button>
+            
+            <button
+              onClick={handleAddNode}
+              className="flex items-center px-4 py-2 rounded-md text-sm font-medium bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-colors"
+              title="Add New Node"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              Add Node
+            </button>
+          </div>
+        </div>
       </ReactFlow>
     </div>
   );
