@@ -5,7 +5,6 @@ import { validateAPIKey, readSystemPrompt, createErrorResponse } from "@/utils/a
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Only include the properties we need for document generation
-// while maintaining compatibility with TopicState from KonvaStage
 type Topic = {
   id: string;
   text: string;
