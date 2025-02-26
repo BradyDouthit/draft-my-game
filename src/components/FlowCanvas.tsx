@@ -99,10 +99,33 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     console.log(`Node ${nodeId} deleted`);
   }, [nodes, setNodes, setEdges]);
 
+  // Handle node text updates
+  const handleNodeEdit = useCallback((nodeId: string, newText: string) => {
+    // Update the node text
+    setNodes(prevNodes => 
+      prevNodes.map(node => {
+        if (node.id === nodeId) {
+          // Copy the node and update the text in data
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              text: newText,
+              label: newText // Update label as well if it's used
+            }
+          };
+        }
+        return node;
+      })
+    );
+    
+    console.log(`Node ${nodeId} updated with text: ${newText}`);
+  }, [setNodes]);
+
   // Define node types with the delete handler passed to the custom node
   const nodeTypes = React.useMemo(() => ({
-    custom: (props: any) => <Node {...props} onDelete={handleNodeDelete} />
-  }), [handleNodeDelete]);
+    custom: (props: any) => <Node {...props} onDelete={handleNodeDelete} onEdit={handleNodeEdit} />
+  }), [handleNodeDelete, handleNodeEdit]);
 
   // Update nodes when topics or rootNode change
   React.useEffect(() => {
