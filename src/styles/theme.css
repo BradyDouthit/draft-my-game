@@ -1,0 +1,76 @@
+/* Theme CSS Variables for consistent styling across components */
+
+:root {
+  /* Light theme variables */
+  --light-background: #ffffff;
+  --light-surface: #f3f4f6;
+  --light-text-primary: #111827;
+  --light-text-secondary: #4b5563; 
+  --light-text-muted: #6b7280;
+  --light-border: #e5e7eb;
+  --light-shadow: rgba(0, 0, 0, 0.1);
+  --light-accent-primary: #3b82f6;
+  --light-accent-secondary: #60a5fa;
+  --light-accent-hover: #2563eb;
+  --light-node-bg: #f3f4f6;
+  --light-error: #ef4444;
+  --light-success: #10b981;
+  --light-handle-color: #3b82f6;
+  --light-edge-color: #9ca3af;
+}
+
+.dark {
+  /* Dark theme variables - Neutral gray tones */
+  --dark-background: #121212; /* More neutral dark background */
+  --dark-surface: #1e1e1e;    /* More neutral surface color */
+  --dark-text-primary: #f5f5f5;
+  --dark-text-secondary: #e0e0e0;
+  --dark-text-muted: #a0a0a0;
+  --dark-border: #2e2e2e;     /* More neutral border */
+  --dark-shadow: rgba(0, 0, 0, 0.4);
+  --dark-accent-primary: #6b6b6b;  /* Less blue, more gray */
+  --dark-accent-secondary: #4a4a4a; /* Less blue, more gray */
+  --dark-accent-hover: #7e7e7e;     /* Less blue, more gray */
+  --dark-node-bg: #212121;          /* More neutral node background */
+  --dark-error: #f87171;
+  --dark-success: #34d399;
+  --dark-handle-color: #777777;     /* Less blue handle */
+  --dark-edge-color: #5c5c5c;       /* More neutral edge color */
+}
+
+/* Theme variables that switch based on dark mode */
+:root {
+  --background: var(--light-background);
+  --surface: var(--light-surface);
+  --text-primary: var(--light-text-primary);
+  --text-secondary: var(--light-text-secondary);
+  --text-muted: var(--light-text-muted);
+  --border: var(--light-border);
+  --shadow: var(--light-shadow);
+  --accent-primary: var(--light-accent-primary);
+  --accent-secondary: var(--light-accent-secondary);
+  --accent-hover: var(--light-accent-hover);
+  --node-bg: var(--light-node-bg);
+  --error: var(--light-error);
+  --success: var(--light-success);
+  --handle-color: var(--light-handle-color);
+  --edge-color: var(--light-edge-color);
+}
+
+.dark {
+  --background: var(--dark-background);
+  --surface: var(--dark-surface);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --border: var(--dark-border);
+  --shadow: var(--dark-shadow);
+  --accent-primary: var(--dark-accent-primary);
+  --accent-secondary: var(--dark-accent-secondary);
+  --accent-hover: var(--dark-accent-hover);
+  --node-bg: var(--dark-node-bg);
+  --error: var(--dark-error);
+  --success: var(--dark-success);
+  --handle-color: var(--dark-handle-color);
+  --edge-color: var(--dark-edge-color);
+} 

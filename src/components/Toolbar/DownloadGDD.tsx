@@ -8,7 +8,6 @@ interface DownloadGDDProps {
   topics: Array<{
     id: string;
     text: string;
-    expansions?: string[];
   }>;
 }
 
@@ -73,13 +72,14 @@ const DownloadGDD: React.FC<DownloadGDDProps> = ({ useCase, topics }) => {
     <button
       onClick={handleDownload}
       disabled={isLoading}
-      className="flex items-center gap-2 px-3 py-2 rounded-md
-        transition-colors duration-200 bg-blue-600 text-gray-200 
-        hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
+        transition-colors duration-200 bg-[var(--accent-primary)] text-white
+        hover:bg-[var(--accent-primary-hover)] shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+      title="Download Game Design Document"
     >
       <span className="w-5 h-5">
         {isLoading ? (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
         ) : (
           <Download size={20} />
         )}

@@ -1,0 +1,117 @@
+/* Import theme variables */
+@import '../styles/theme.css';
+
+/* Override React Flow default node styles */
+
+/* Base node styles - remove background and padding */
+.react-flow__node {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Light/dark theme node overrides */
+.react-flow__node {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+/* Root node styles */
+.react-flow__node.root-node {
+  z-index: 10;
+}
+
+.root-node .custom-node {
+  background-color: var(--background) !important;
+  box-shadow: 0 0 10px var(--shadow) !important;
+}
+
+/* Controls styling */
+.react-flow__controls {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 2px 4px var(--shadow) !important;
+}
+
+/* Target all buttons within ReactFlow */
+.react-flow button,
+.react-flow__controls-button {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.2s !important;
+}
+
+/* Light mode hover styles */
+html:not(.dark) .react-flow__controls-button:hover {
+  background-color: #e5e7eb !important; /* gray-200 for light mode */
+}
+
+/* Dark mode hover styles with simple selector now that we're using reactflow's built-in dark mode */
+.dark .react-flow__controls-button:hover {
+  background-color: #3a3a3a !important; /* Match Theme Switcher dark mode hover */
+}
+
+.react-flow__controls-button svg {
+  fill: var(--text-primary) !important;
+}
+
+/* MiniMap styling */
+.react-flow__minimap {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+}
+
+/* Edge styling */
+.react-flow__edge-path {
+  stroke: var(--edge-color) !important;
+}
+
+/* Ensure selection indicators work with transparency */
+.react-flow__node.selected {
+  box-shadow: none !important;
+}
+
+.react-flow__node.selected::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 8px;
+  border: 2px solid var(--accent-primary) !important;
+  background: transparent !important;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Handle styling */
+.react-flow__handle {
+  background-color: var(--handle-color) !important;
+  opacity: 0.8;
+}
+
+.react-flow__handle:hover {
+  opacity: 1;
+}
+
+/* Attribution */
+.react-flow__attribution {
+  background-color: var(--background) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Edge text */
+.react-flow__edge-textbg {
+  fill: var(--background) !important;
+}
+
+.react-flow__edge-text {
+  fill: var(--text-primary) !important;
+}
+
+/* Connection line */
+.react-flow__connection-path {
+  stroke: var(--accent-primary) !important;
+} 

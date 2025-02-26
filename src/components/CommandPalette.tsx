@@ -1,34 +1,92 @@
 import { useState, useEffect } from 'react';
+import { TopicNode } from './FlowCanvas';
+import { useTheme } from '@/utils/ThemeProvider';
 
 interface CommandPaletteProps {
-  isLoading: boolean;
-  isDarkMode: boolean;
-  onSubmit: (value: string) => void;
+  onTopicsGenerated: (topics: TopicNode[], inputValue: string) => void;
 }
 
-export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: CommandPaletteProps) {
+export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProps) {
+  const { isDarkMode } = useTheme();
   const [inputValue, setInputValue] = useState('');
   const [isDocked, setIsDocked] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // Mark component as mounted
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Check if tooltip has been dismissed before
   useEffect(() => {
-    const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
-    setShowTooltip(!hasBeenDismissed);
-  }, []);
+    if (!mounted) return;
+    
+    try {
+      const hasBeenDismissed = localStorage.getItem('tooltipDismissed') === 'true';
+      setShowTooltip(!hasBeenDismissed);
+    } catch (error) {
+      console.warn('Could not access localStorage for tooltip state:', error);
+    }
+  }, [mounted]);
 
   const handleDismissTooltip = () => {
     setShowTooltip(false);
-    localStorage.setItem('tooltipDismissed', 'true');
+    try {
+      localStorage.setItem('tooltipDismissed', 'true');
+    } catch (error) {
+      console.warn('Could not save tooltip state to localStorage:', error);
+    }
+  };
+
+  // Handle submission and API call
+  const handleSubmit = async (value: string) => {
+    if (!value.trim()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Call the API to generate topics
+      const response = await fetch('/api/generate-topics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ useCase: value }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate topics');
+      }
+      
+      const data = await response.json();
+      
+      // Create topic nodes from the generated topics
+      const newTopics: TopicNode[] = data.topics.map((topic: string) => ({
+        id: `topic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        text: topic
+      }));
+      
+      // Send the topics back to the parent component along with the input value
+      onTopicsGenerated(newTopics, value);
+    } catch (error) {
+      console.error('Error generating topics:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSubmit(inputValue);
-      setInputValue('');
-      setIsDocked(true);
-      setShowTooltip(false);
+      const currentInput = inputValue.trim();
+      if (currentInput) {
+        handleSubmit(currentInput);
+        setInputValue('');
+        setIsDocked(true);
+        setShowTooltip(false);
+      }
     }
   };
 
@@ -50,22 +108,6 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
       `}
     >
       <div className="relative">
-        {/* Loading gradient border container */}
-        <div className={`
-          absolute -inset-[2px] rounded-lg
-          ${isLoading ? 'opacity-100' : 'opacity-0'}
-          transition-opacity duration-300
-          pointer-events-none
-          bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 to-blue-500
-          animate-rotate-gradient
-          p-[2px]
-        `}>
-          <div className={`
-            h-full w-full rounded-lg
-            ${isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}
-          `} />
-        </div>
-
         {/* Input Container */}
         <div className={`
           relative transition-all duration-300
@@ -78,12 +120,13 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
               className={`
                 absolute inset-0 flex items-center justify-center
                 rounded-lg shadow-lg
-                ${isDarkMode 
-                  ? 'bg-[#1a1a1a] text-white hover:bg-[#2a2a2a]' 
-                  : 'bg-white text-gray-900 hover:bg-gray-50'
-                }
+                bg-[var(--surface)] text-[var(--text-primary)]
                 transition-colors duration-200
-                border border-black/10
+                border border-[var(--border)]
+                ${isDarkMode 
+                  ? 'hover:bg-[#3a3a3a]' 
+                  : 'hover:bg-gray-200'
+                }
               `}
             >
               <svg 
@@ -103,30 +146,40 @@ export default function CommandPalette({ isLoading, isDarkMode, onSubmit }: Comm
             </button>
           )}
 
-          {/* Textarea - Hidden when docked and not loading */}
-          <textarea
-            rows={4}
-            cols={50}
-            className={`
-              relative px-4 py-2 text-lg rounded-lg
-              ${isDarkMode 
-                ? 'bg-[#2a2a2a] text-white placeholder-gray-400' 
-                : 'bg-white text-gray-900 placeholder-gray-500'
-              }
-              shadow-lg
-              border border-black/10
-              focus:outline-none
-              resize-none
-              transition-all duration-300
-              ${isLoading ? 'border-transparent opacity-50' : ''}
-              ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : 'w-full'}
-            `}
-            placeholder={'Enter your video game concept'}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
+          {/* Textarea with animated border when loading */}
+          <div className="relative">
+            <textarea
+              rows={4}
+              cols={50}
+              className={`
+                relative px-4 py-2 text-lg rounded-lg
+                bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)]
+                shadow-lg
+                border ${isLoading ? 'border-transparent' : 'border-[var(--border)]'}
+                focus:outline-none
+                resize-none
+                transition-all duration-300
+                w-full h-full
+                flex
+                ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : ''}
+              `}
+              placeholder={isLoading ? 'Generating topics...' : 'Enter your video game concept'}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+            />
+            
+            {/* Animated border for loading state - without spinner and text */}
+            {isLoading && (
+              <div className="absolute inset-0 rounded-lg pointer-events-none overflow-hidden">
+                <div className="absolute inset-0 rounded-lg border-[3px] border-[var(--accent-primary)] animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.3)]"></div>
+                
+                {/* Animated gradient spinner */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent-primary)] to-transparent animate-shimmer"></div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tooltip */}

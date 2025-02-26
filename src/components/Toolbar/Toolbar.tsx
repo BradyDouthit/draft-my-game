@@ -1,24 +1,29 @@
 import React from 'react';
 import CreateTopic from '../CreateTopic/CreateTopic';
 import DownloadGDD from './DownloadGDD';
+import './toolbar-styles.css';
 
 interface ToolbarProps {
   onCreateTopic: (text: string) => void;
-  useCase: string;
   topics: Array<{
     id: string;
     text: string;
-    expansions?: string[];
   }>;
+  useCase: string;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({ onCreateTopic, useCase, topics }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ 
+  onCreateTopic, 
+  useCase, 
+  topics
+}) => {
   return (
-    <div className="fixed bottom-5 left-1/2 transform -translate-x-1/2
-      bg-gray-800 rounded-lg shadow-lg p-2 flex items-center gap-2"
+    <div className="bg-[var(--surface)] rounded-lg shadow-lg p-2 flex items-center gap-2
+      border border-[var(--border)] toolbar-container" onClick={(e) => e.stopPropagation()}
     >
       <CreateTopic onCreateTopic={onCreateTopic} />
-      <div className="w-px h-8 bg-gray-600" /> {/* Vertical divider */}
+      <div className="w-px h-8 bg-[var(--border)]" /> {/* Vertical divider */}
+      
       <DownloadGDD useCase={useCase} topics={topics} />
     </div>
   );

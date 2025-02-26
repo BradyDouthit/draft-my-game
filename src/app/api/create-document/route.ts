@@ -5,11 +5,9 @@ import { validateAPIKey, readSystemPrompt, createErrorResponse } from "@/utils/a
 import { DEFAULT_MODELS } from "@/utils/llm-constants";
 
 // Only include the properties we need for document generation
-// while maintaining compatibility with TopicState from KonvaStage
 type Topic = {
   id: string;
   text: string;
-  expansions?: string[];
   // These properties are optional since they come from TopicState
   // but aren't needed for document generation
   x?: number;
@@ -33,10 +31,6 @@ function validateDocumentRequest(data: any): data is DocumentRequest {
   return data.topics.every((topic: any) => {
     if (typeof topic !== 'object') return false;
     if (typeof topic.text !== 'string' || !topic.text) return false;
-    if (topic.expansions && !Array.isArray(topic.expansions)) return false;
-    if (topic.expansions) {
-      return topic.expansions.every((exp: any) => typeof exp === 'string' && exp);
-    }
     return true;
   });
 }
@@ -64,15 +58,10 @@ export async function POST(request: Request) {
       return createErrorResponse(promptError.error, promptError.status);
     }
 
-    // Format topics and expansions for the input context
+    // Format topics for the input context - flat list without expansions
     const topicsXML = body.topics.map(topic => {
-      const expansionsXML = topic.expansions 
-        ? topic.expansions.map(exp => `        <expansion>${exp}</expansion>`).join('\n')
-        : '';
-      
       return `    <topic>
       <text>${topic.text}</text>
-${expansionsXML ? `      <expansions>\n${expansionsXML}\n      </expansions>` : ''}
     </topic>`;
     }).join('\n');
 
