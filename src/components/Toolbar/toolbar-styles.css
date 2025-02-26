@@ -1,0 +1,21 @@
+/* Toolbar styles */
+.toolbar-container {
+  z-index: 1000;
+  position: relative;
+  pointer-events: auto !important;
+}
+
+.toolbar-container button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.toolbar-container button:hover {
+  opacity: 0.9;
+}
+
+/* Fix for React Flow potentially blocking events */
+.react-flow__panel.bottom-center {
+  pointer-events: auto !important;
+  z-index: 1000;
+} 

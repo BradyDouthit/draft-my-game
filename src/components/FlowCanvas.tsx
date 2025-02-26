@@ -21,10 +21,12 @@ import '@xyflow/react/dist/style.css';
 
 // Custom CSS to override React Flow node styles
 import './flow-styles.css';
+import '../components/Toolbar/toolbar-styles.css';
 
 import { useTheme } from '@/utils/ThemeProvider';
 import { getTreeLayout } from '@/utils/treeLayout';
 import { Node } from './Node';
+import Toolbar from './Toolbar/Toolbar';
 
 // Define types for our nodes
 export interface TopicNode {
@@ -387,10 +389,12 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
   }, [nodes, edges]);
 
   // Handle adding a new node to the canvas
-  const handleAddNode = useCallback(() => {
+  const handleAddNode = useCallback((topicText: string) => {
+    if (!topicText.trim()) return;
+    
     const newNodeId = `node-${Date.now()}`;
     
-    // Create a new node
+    // Create a new node with the provided topic text
     const newNode: ReactFlowNode = {
       id: newNodeId,
       // Position will be near the center but slightly offset to be visible
@@ -399,9 +403,9 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
         y: Math.random() * 100 - 50 
       },
       data: {
-        text: 'New Node',
+        text: topicText.trim(),
         expansions: [],
-        label: 'New Node',
+        label: topicText.trim(),
         isDragging: false
       },
       style: defaultNodeStyle,
@@ -468,32 +472,23 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           </button>
         </Panel>
         
-        {/* Floating Toolbar */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
-          <div className="flex items-center space-x-3 bg-[var(--surface)] rounded-lg shadow-lg border border-[var(--border)] p-2">
-            <button
-              onClick={handleDownloadGDD}
-              className="flex items-center px-4 py-2 rounded-md text-sm font-medium bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
-              title="Download Game Design Document"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-              Download GDD
-            </button>
-            
-            <button
-              onClick={handleAddNode}
-              className="flex items-center px-4 py-2 rounded-md text-sm font-medium bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-colors"
-              title="Add New Node"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Add Node
-            </button>
-          </div>
-        </div>
+        {/* Wrap the toolbar in a Panel component so it receives events correctly */}
+        <Panel 
+          position="bottom-center" 
+          className="mb-6 z-10 pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Toolbar 
+            onCreateTopic={handleAddNode} 
+            onDownloadGDD={handleDownloadGDD} 
+            useCase="game-design" 
+            topics={nodes.map(node => ({
+              id: node.id,
+              text: node.data.text as string,
+              expansions: (node.data.expansions || []) as string[]
+            }))} 
+          />
+        </Panel>
       </ReactFlow>
     </div>
   );
