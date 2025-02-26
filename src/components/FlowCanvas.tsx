@@ -339,55 +339,6 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     [setEdges]
   );
 
-  // Handle downloading the Game Design Document (GDD)
-  const handleDownloadGDD = useCallback(() => {
-    if (!nodes.length) {
-      alert('No content to download');
-      return;
-    }
-
-    try {
-      // Create a structured JSON representation of the flow
-      const gddData = {
-        title: "Game Design Document",
-        created: new Date().toISOString(),
-        rootNode: nodes.find(node => node.data.isRoot)?.data?.text || "",
-        nodes: nodes.map(node => ({
-          id: node.id,
-          text: node.data.text,
-          expansions: node.data.expansions || [],
-          isRoot: node.data.isRoot || false,
-          position: node.position
-        })),
-        connections: edges.map(edge => ({
-          source: edge.source,
-          target: edge.target
-        }))
-      };
-
-      // Convert to JSON string with pretty formatting
-      const jsonString = JSON.stringify(gddData, null, 2);
-      
-      // Create a blob and download link
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'game-design-document.json';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading GDD:', error);
-      alert('Failed to download GDD');
-    }
-  }, [nodes, edges]);
-
   // Handle adding a new node to the canvas
   const handleAddNode = useCallback((topicText: string) => {
     if (!topicText.trim()) return;
@@ -483,7 +434,6 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
           >
             <Toolbar 
               onCreateTopic={handleAddNode} 
-              onDownloadGDD={handleDownloadGDD} 
               useCase="game-design" 
               topics={nodes.map(node => ({
                 id: node.id,
