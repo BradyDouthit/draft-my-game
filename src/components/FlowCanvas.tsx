@@ -264,7 +264,6 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
       
     } catch (error) {
       console.error('Error expanding node:', error);
-      alert('Failed to expand node: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }, [nodes, setNodes, setEdges]);
 

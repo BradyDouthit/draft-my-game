@@ -146,26 +146,40 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
             </button>
           )}
 
-          {/* Textarea - Hidden when docked and not loading */}
-          <textarea
-            rows={4}
-            cols={50}
-            className={`
-              relative px-4 py-2 text-lg rounded-lg
-              bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)]
-              shadow-lg
-              border border-[var(--border)]
-              focus:outline-none
-              resize-none
-              transition-all duration-300
-              ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : 'w-full'}
-            `}
-            placeholder={'Enter your video game concept'}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
+          {/* Textarea with animated border when loading */}
+          <div className="relative">
+            <textarea
+              rows={4}
+              cols={50}
+              className={`
+                relative px-4 py-2 text-lg rounded-lg
+                bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)]
+                shadow-lg
+                border ${isLoading ? 'border-transparent' : 'border-[var(--border)]'}
+                focus:outline-none
+                resize-none
+                transition-all duration-300
+                w-full h-full
+                flex
+                ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : ''}
+              `}
+              placeholder={isLoading ? 'Generating topics...' : 'Enter your video game concept'}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+            />
+            
+            {/* Animated border for loading state - without spinner and text */}
+            {isLoading && (
+              <div className="absolute inset-0 rounded-lg pointer-events-none overflow-hidden">
+                <div className="absolute inset-0 rounded-lg border-[3px] border-[var(--accent-primary)] animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.3)]"></div>
+                
+                {/* Animated gradient spinner */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent-primary)] to-transparent animate-shimmer"></div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tooltip */}
