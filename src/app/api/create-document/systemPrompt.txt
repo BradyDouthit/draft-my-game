@@ -5,11 +5,8 @@ Input Format:
   <useCase>The core game concept/use case</useCase>
   <topics>
     <topic>
-      <text>Main topic or feature</text>
-      <expansions>
-        <expansion>Detailed expansion of the topic</expansion>
-        ...
-      </expansions>
+      <text>Topic or extension of a feature</text>
+      ... more topics
     </topic>
     ...
   </topics>

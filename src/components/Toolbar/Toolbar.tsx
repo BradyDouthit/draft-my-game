@@ -8,7 +8,6 @@ interface ToolbarProps {
   topics: Array<{
     id: string;
     text: string;
-    expansions?: string[];
   }>;
   useCase: string;
 }

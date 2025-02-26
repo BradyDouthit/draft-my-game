@@ -180,10 +180,105 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
     console.log(`Node ${nodeId} updated with text: ${newText}`);
   }, [setNodes]);
 
+  // Handle expanding a node with ideas
+  const handleExpandNode = useCallback(async (nodeId: string, nodeText: string) => {
+    try {
+      // Find the node to expand
+      const nodeToExpand = nodes.find(node => node.id === nodeId);
+      if (!nodeToExpand) return;
+      
+      // Call the expand-topic API
+      const response = await fetch('/api/expand-topic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic: nodeText,
+          useCase: 'game-design'
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to expand topic');
+      }
+      
+      const data = await response.json();
+      const expansions = data.expansions || [];
+      
+      if (expansions.length === 0) {
+        console.log('No expansions returned');
+        return;
+      }
+      
+      // Create a new child node for each expansion
+      const newNodes: ReactFlowNode[] = [];
+      const newEdges: Edge[] = [];
+      
+      expansions.forEach((expansion: string, index: number) => {
+        const newNodeId = `node-${nodeId}-exp-${Date.now()}-${index}`;
+        
+        // Create a new node with the expansion text
+        const newNode: ReactFlowNode = {
+          id: newNodeId,
+          // Position will be calculated by layout algorithm later
+          position: { 
+            x: nodeToExpand.position.x + (index - expansions.length/2) * 100, 
+            y: nodeToExpand.position.y + 150
+          },
+          data: {
+            text: expansion,
+            expansions: [],
+            label: expansion,
+            isDragging: false
+          },
+          style: defaultNodeStyle,
+          className: 'custom-node',
+          type: 'custom'
+        };
+        
+        newNodes.push(newNode);
+        
+        // Create an edge from the parent node to this expansion
+        const newEdge: Edge = {
+          id: `edge-${nodeId}-${newNodeId}`,
+          source: nodeId,
+          target: newNodeId,
+          type: 'smoothstep',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          }
+        };
+        
+        newEdges.push(newEdge);
+      });
+      
+      // Add the new nodes and edges
+      setNodes(prevNodes => [...prevNodes, ...newNodes]);
+      setEdges(prevEdges => [...prevEdges, ...newEdges]);
+      
+      // Mark content as changed to trigger layout
+      contentChangedRef.current = true;
+      
+      console.log(`Node ${nodeId} expanded with ${expansions.length} ideas`);
+      
+    } catch (error) {
+      console.error('Error expanding node:', error);
+      alert('Failed to expand node: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }, [nodes, setNodes, setEdges]);
+
   // Define node types with proper memoization to prevent re-renders
   const nodeTypes = useMemo(() => ({
-    custom: (props: any) => <Node {...props} onDelete={handleNodeDelete} onEdit={handleNodeEdit} />
-  }), [handleNodeDelete, handleNodeEdit]);
+    custom: (props: any) => (
+      <Node 
+        {...props} 
+        onDelete={handleNodeDelete} 
+        onEdit={handleNodeEdit} 
+        onExpand={handleExpandNode}
+      />
+    )
+  }), [handleNodeDelete, handleNodeEdit, handleExpandNode]);
 
   // Update nodes when topics or rootNode change
   React.useEffect(() => {
@@ -437,8 +532,7 @@ export default function FlowCanvas({ topics, rootNode }: FlowCanvasProps) {
               useCase="game-design" 
               topics={nodes.map(node => ({
                 id: node.id,
-                text: node.data.text as string,
-                expansions: (node.data.expansions || []) as string[]
+                text: node.data.text as string
               }))} 
             />
           </Panel>

@@ -15,6 +15,7 @@ interface NodeData {
 interface CustomNodeProps extends NodeProps {
     onDelete?: (nodeId: string) => void;
     onEdit?: (nodeId: string, newText: string) => void;
+    onExpand?: (nodeId: string, nodeText: string) => void;
 }
 
 // Default node styles
@@ -27,10 +28,11 @@ const defaultNodeStyle = {
 };
 
 export function Node(
-    { data, isConnectable, id, onDelete, onEdit }: CustomNodeProps,
+    { data, isConnectable, id, onDelete, onEdit, onExpand }: CustomNodeProps,
 ) {
     const [showToolbar, setShowToolbar] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [isExpanding, setIsExpanding] = useState(false);
     const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -116,6 +118,30 @@ export function Node(
         }
     };
 
+    // Handler for lightbulb icon click
+    const handleLightbulb = (e: React.MouseEvent) => {
+        // Stop event propagation
+        e.stopPropagation();
+        
+        // Ensure the toolbar is hidden to prevent multiple clicks
+        setShowToolbar(false);
+        
+        // Set expanding state to show loading indicator
+        setIsExpanding(true);
+        
+        if (onExpand && id) {
+            onExpand(id, text);
+            
+            // Reset expanding state after a reasonable timeout in case the callback doesn't complete
+            setTimeout(() => {
+                setIsExpanding(false);
+            }, 5000);
+        } else {
+            console.log("Expand node:", text, "(No expand handler provided)");
+            setIsExpanding(false);
+        }
+    };
+
     // Clear any hide timeouts when component unmounts
     useEffect(() => {
         return () => {
@@ -195,6 +221,25 @@ export function Node(
                             >
                                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
+                        </button>
+                        <button
+                            onClick={handleLightbulb}
+                            disabled={isExpanding}
+                            className="flex items-center justify-center p-1 hover:bg-[var(--surface-hover)] rounded text-[var(--text-primary)] transition-colors mx-1 disabled:opacity-50 disabled:cursor-wait"
+                            title="Expand on this idea"
+                        >
+                            {isExpanding ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--text-primary)]" />
+                            ) : (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+                                </svg>
+                            )}
                         </button>
                         <button
                             onClick={handleDelete}

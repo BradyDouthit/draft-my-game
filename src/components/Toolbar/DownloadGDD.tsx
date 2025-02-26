@@ -8,7 +8,6 @@ interface DownloadGDDProps {
   topics: Array<{
     id: string;
     text: string;
-    expansions?: string[];
   }>;
 }
 
