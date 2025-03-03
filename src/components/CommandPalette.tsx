@@ -156,7 +156,10 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
                 bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)]
                 shadow-lg
                 border ${isLoading ? 'border-transparent' : 'border-[var(--border)]'}
-                focus:outline-none
+                outline-none
+                focus:border-[var(--text-muted)] 
+                focus:ring-1 
+                focus:ring-[var(--text-muted)]
                 resize-none
                 transition-all duration-300
                 w-full h-full
