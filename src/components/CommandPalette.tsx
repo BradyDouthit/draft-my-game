@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TopicNode } from './FlowCanvas';
 import { useTheme } from '@/utils/ThemeProvider';
+import { track } from '@vercel/analytics';
 
 interface CommandPaletteProps {
   onTopicsGenerated: (topics: TopicNode[], inputValue: string) => void;
@@ -47,6 +48,11 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
     setIsLoading(true);
     
     try {
+      // Track the submit event
+      track('topic_generation', {
+        input_length: value.length
+      });
+      
       // Call the API to generate topics
       const response = await fetch('/api/generate-topics', {
         method: 'POST',
@@ -95,6 +101,11 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
     if (!isDocked) {
       setInputValue('');
     }
+    
+    // Track the dock toggle event
+    track('dock_toggle', {
+      state: isDocked ? 'expanded' : 'collapsed'
+    });
   };
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus } from 'react-feather';
+import { track } from '@vercel/analytics';
 
 interface CreateTopicProps {
   onCreateTopic: (text: string) => void;
@@ -14,6 +15,12 @@ const CreateTopicButton: React.FC<CreateTopicButtonProps> = ({ onClick }) => (
     onClick={(e) => {
       e.stopPropagation();
       console.log('CreateTopicButton clicked');
+      
+      // Track button click
+      track('topic_button_click', {
+        action: 'open_form'
+      });
+      
       onClick();
     }}
     className="flex items-center gap-2 px-3 py-2 rounded-md
@@ -37,7 +44,14 @@ const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ onClose, onCreateTopi
   const handleCreateTopic = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (topicName.trim() === '') return;
+    
     onCreateTopic(topicName.trim());
+    
+    // Track topic creation
+    track('topic_created', {
+      length: topicName.trim().length
+    });
+    
     setTopicName('');
     onClose();
   };

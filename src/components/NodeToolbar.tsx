@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NodeToolbar as ReactFlowNodeToolbar, Position } from "@xyflow/react";
+import { track } from '@vercel/analytics';
 
 interface NodeToolbarProps {
     nodeId: string;
@@ -37,6 +38,11 @@ export function NodeToolbar({
                 // Show success indicator
                 setCopySuccess(true);
                 
+                // Track copy action
+                track('node_copy', {
+                    text_length: nodeText.length
+                });
+                
                 // Hide success indicator after short delay
                 setTimeout(() => {
                     setCopySuccess(false);
@@ -51,18 +57,33 @@ export function NodeToolbar({
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         onEdit(nodeId);
+        
+        // Track edit action
+        track('node_edit', {
+            id: nodeId
+        });
     };
 
     // Handler for delete button
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
         onDelete(nodeId);
+        
+        // Track delete action
+        track('node_delete', {
+            id: nodeId
+        });
     };
 
     // Handler for lightbulb/expand button
     const handleLightbulb = (e: React.MouseEvent) => {
         e.stopPropagation();
         onExpand(nodeId, nodeText);
+        
+        // Track expand action
+        track('node_expand', {
+            text_length: nodeText.length
+        });
     };
     
     return (
