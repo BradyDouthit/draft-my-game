@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TopicNode } from './FlowCanvas';
 import { useTheme } from '@/utils/ThemeProvider';
+import { track } from '@vercel/analytics';
 
 interface CommandPaletteProps {
   onTopicsGenerated: (topics: TopicNode[], inputValue: string) => void;
@@ -47,6 +48,11 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
     setIsLoading(true);
     
     try {
+      // Track the submit event
+      track('topic_generation', {
+        input_length: value.length
+      });
+      
       // Call the API to generate topics
       const response = await fetch('/api/generate-topics', {
         method: 'POST',
@@ -95,6 +101,11 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
     if (!isDocked) {
       setInputValue('');
     }
+    
+    // Track the dock toggle event
+    track('dock_toggle', {
+      state: isDocked ? 'expanded' : 'collapsed'
+    });
   };
 
   return (
@@ -128,6 +139,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
                   : 'hover:bg-gray-200'
                 }
               `}
+              aria-label="Expand search"
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -147,7 +159,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
           )}
 
           {/* Textarea with animated border when loading */}
-          <div className="relative">
+          <div className={`${(!isLoading && isDocked) ? 'pointer-events-none' : ''}`}>
             <textarea
               rows={4}
               cols={50}
@@ -164,7 +176,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
                 transition-all duration-300
                 w-full h-full
                 flex
-                ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : ''}
+                ${(!isLoading && isDocked) ? 'opacity-0' : ''}
               `}
               placeholder={isLoading ? 'Generating topics...' : 'Enter your video game concept'}
               value={inputValue}

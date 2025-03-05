@@ -26,3 +26,4 @@ Guidelines:
 4. Consider technical feasibility
 5. Maintain consistency with gaming conventions
 6. Focus on player experience and engagement 
+7. Within each <expansion> tag, ONLY include plain text. No markdown.

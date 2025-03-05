@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { track } from '@vercel/analytics';
 
 interface NewTopicToolProps {
   originalTopicId: string;
@@ -16,6 +17,12 @@ const NewTopicTool: React.FC<NewTopicToolProps> = ({
   const handleCreateTopic = () => {
     if (topicName.trim() === '') return;
     createTopic({ name: topicName, parentId: originalTopicId });
+    
+    // Track new related topic creation
+    track('new_topic_created', {
+      parent_id: originalTopicId
+    });
+    
     setTopicName('');
     onClose();
   };
