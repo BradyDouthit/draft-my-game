@@ -128,6 +128,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
                   : 'hover:bg-gray-200'
                 }
               `}
+              aria-label="Expand search"
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -147,7 +148,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
           )}
 
           {/* Textarea with animated border when loading */}
-          <div className="relative">
+          <div className={`${(!isLoading && isDocked) ? 'pointer-events-none' : ''}`}>
             <textarea
               rows={4}
               cols={50}
@@ -164,7 +165,7 @@ export default function CommandPalette({ onTopicsGenerated }: CommandPaletteProp
                 transition-all duration-300
                 w-full h-full
                 flex
-                ${(!isLoading && isDocked) ? 'opacity-0 pointer-events-none' : ''}
+                ${(!isLoading && isDocked) ? 'opacity-0' : ''}
               `}
               placeholder={isLoading ? 'Generating topics...' : 'Enter your video game concept'}
               value={inputValue}
