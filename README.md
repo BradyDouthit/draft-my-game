@@ -1,4 +1,4 @@
-# Game Idea Generator
+# Draft My Game
 
 A powerful brainstorming tool for indie game developers built with Next.js, React Flow, and Google's Generative AI.
 
